@@ -1,14 +1,19 @@
+---
+hidden: true
+---
+
 # Pass Chain - Quick Start
 
 ## What is Pass Chain?
 
 Secure password manager using:
-- **Client-side encryption** (XChaCha20-Poly1305)
-- **Split-key storage** (Vault + Database + localStorage)
-- **Wallet authentication** (MetaMask/WalletConnect)
-- **Blockchain audit trail** (ready for Hyperledger Fabric)
 
----
+* **Client-side encryption** (XChaCha20-Poly1305)
+* **Split-key storage** (Vault + Database + localStorage)
+* **Wallet authentication** (MetaMask/WalletConnect)
+* **Blockchain audit trail** (ready for Hyperledger Fabric)
+
+***
 
 ## Start Everything
 
@@ -26,7 +31,7 @@ npm run dev
 
 **Access:** http://localhost:3000
 
----
+***
 
 ## Quick Update
 
@@ -35,7 +40,7 @@ npm run dev
 .\update.ps1
 ```
 
----
+***
 
 ## Architecture
 
@@ -59,18 +64,18 @@ Infrastructure (Kubernetes)
   └─→ Redis StatefulSet
 ```
 
----
+***
 
 ## Features
 
-- ✅ Store credentials with wallet signature
-- ✅ Reveal passwords (requires wallet signature)
-- ✅ Delete credentials  
-- ✅ Blockchain explorer UI
-- ✅ Audit logs
-- ✅ Stats dashboard
+* ✅ Store credentials with wallet signature
+* ✅ Reveal passwords (requires wallet signature)
+* ✅ Delete credentials
+* ✅ Blockchain explorer UI
+* ✅ Audit logs
+* ✅ Stats dashboard
 
----
+***
 
 ## Fabric Integration
 
@@ -83,6 +88,6 @@ Backend is **ready** for Hyperledger Fabric. To connect:
 
 See `BACKEND_FABRIC_READY.md` for details.
 
----
+***
 
 **AUUUUFFFF!** 🔥
