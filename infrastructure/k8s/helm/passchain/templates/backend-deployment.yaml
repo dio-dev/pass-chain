@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "passchain.fullname" . }}-backend
+  labels:
+    {{- include "passchain.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  replicas: {{ .Values.backend.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "passchain.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "passchain.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      containers:
+      - name: backend
+        image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+        imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        env:
+        - name: SERVER_PORT
+          value: "8080"
+        - name: ENVIRONMENT
+          value: {{ .Values.backend.environment | quote }}
+        - name: DB_HOST
+          value: {{ include "passchain.fullname" . }}-postgresql
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: {{ .Values.postgresql.auth.username | quote }}
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "passchain.fullname" . }}-postgresql
+              key: postgres-password
+        - name: DB_NAME
+          value: {{ .Values.postgresql.auth.database | quote }}
+        - name: DB_SSLMODE
+          value: "disable"
+        - name: REDIS_HOST
+          value: {{ include "passchain.fullname" . }}-redis-master
+        - name: REDIS_PORT
+          value: "6379"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "passchain.fullname" . }}-redis
+              key: redis-password
+        - name: VAULT_ADDR
+          value: "http://{{ include "passchain.fullname" . }}-vault:8200"
+        - name: VAULT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: {{ include "passchain.fullname" . }}-vault-token
+              key: token
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        resources:
+          {{- toYaml .Values.backend.resources | nindent 10 }}
+

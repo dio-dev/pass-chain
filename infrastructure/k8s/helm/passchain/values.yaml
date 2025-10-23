@@ -1,0 +1,418 @@
+# Pass Chain Helm Chart Values
+
+## Global Configuration
+global:
+  environment: production
+  domain: passchain.io
+  
+## Frontend Configuration
+frontend:
+  enabled: true
+  replicaCount: 3
+  
+  image:
+    repository: passchain/frontend
+    tag: "2.0.0"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 3000
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/rate-limit: "100"
+    hosts:
+      - host: app.passchain.io
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: passchain-frontend-tls
+        hosts:
+          - app.passchain.io
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+  
+  env:
+    NEXT_PUBLIC_API_URL: https://api.passchain.io/api/v1
+    NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: ""  # Set via secret
+
+## Backend Configuration
+backend:
+  enabled: true
+  replicaCount: 3
+  
+  image:
+    repository: passchain/backend
+    tag: "2.0.0"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: ClusterIP
+    port: 8080
+  
+  ingress:
+    enabled: true
+    className: nginx
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/rate-limit: "200"
+    hosts:
+      - host: api.passchain.io
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: passchain-backend-tls
+        hosts:
+          - api.passchain.io
+  
+  resources:
+    requests:
+      cpu: 200m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 70
+  
+  env:
+    ENVIRONMENT: production
+    PORT: "8080"
+    DB_HOST: passchain-postgresql
+    DB_PORT: "5432"
+    DB_NAME: passchain
+    VAULT_ADDR: http://passchain-vault:8200
+    REDIS_ADDR: passchain-redis-master:6379
+    FABRIC_CONFIG_PATH: /etc/fabric/network.yaml
+    FABRIC_CHANNEL_ID: passchain
+    FABRIC_CHAINCODE_NAME: credentials
+  
+  secrets:
+    DB_USER: postgres
+    DB_PASSWORD: ""  # Generated or from secret
+    VAULT_TOKEN: ""  # From Vault init
+    JWT_SECRET: ""   # Random generated
+
+## PostgreSQL Configuration
+postgresql:
+  enabled: true
+  auth:
+    username: postgres
+    password: ""  # Auto-generated
+    database: passchain
+  
+  primary:
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "gp3"  # AWS EBS
+    
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+  
+  readReplicas:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 100Gi
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+
+## Redis Configuration
+redis:
+  enabled: true
+  architecture: replication
+  auth:
+    enabled: true
+    password: ""  # Auto-generated
+  
+  master:
+    persistence:
+      enabled: true
+      size: 20Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 1Gi
+  
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 20Gi
+
+## HashiCorp Vault Configuration
+vault:
+  enabled: true
+  server:
+    ha:
+      enabled: true
+      replicas: 3
+      raft:
+        enabled: true
+        setNodeId: true
+        
+        config: |
+          ui = true
+          
+          listener "tcp" {
+            tls_disable = 0
+            address = "[::]:8200"
+            cluster_address = "[::]:8201"
+            tls_cert_file = "/vault/tls/tls.crt"
+            tls_key_file = "/vault/tls/tls.key"
+          }
+          
+          storage "raft" {
+            path = "/vault/data"
+          }
+          
+          service_registration "kubernetes" {}
+    
+    resources:
+      requests:
+        cpu: 250m
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 2Gi
+    
+    dataStorage:
+      enabled: true
+      size: 50Gi
+      storageClass: "gp3"
+    
+    auditStorage:
+      enabled: true
+      size: 20Gi
+  
+  injector:
+    enabled: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
+
+## Hyperledger Fabric Configuration
+fabric:
+  enabled: true
+  
+  # Organization: OrgVault
+  orgVault:
+    enabled: true
+    mspId: OrgVaultMSP
+    
+    peers:
+      - name: peer0
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        storage:
+          size: 100Gi
+          storageClass: "gp3"
+      
+      - name: peer1
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        storage:
+          size: 100Gi
+          storageClass: "gp3"
+  
+  # Organization: OrgAudit  
+  orgAudit:
+    enabled: true
+    mspId: OrgAuditMSP
+    
+    peers:
+      - name: peer0
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        storage:
+          size: 100Gi
+          storageClass: "gp3"
+      
+      - name: peer1
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 500m
+            memory: 1Gi
+          limits:
+            cpu: 2000m
+            memory: 4Gi
+        storage:
+          size: 100Gi
+          storageClass: "gp3"
+  
+  # Orderer Configuration
+  orderers:
+    replicaCount: 3
+    consensusType: raft
+    
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+      limits:
+        cpu: 2000m
+        memory: 4Gi
+    
+    storage:
+      size: 50Gi
+      storageClass: "gp3"
+  
+  # Channel Configuration
+  channel:
+    name: passchain
+    organizations:
+      - OrgVaultMSP
+      - OrgAuditMSP
+  
+  # Chaincode Configuration
+  chaincode:
+    name: credentials
+    version: "2.0"
+    language: golang
+    endorsementPolicy: "AND('OrgVaultMSP.peer','OrgAuditMSP.peer')"
+    collectionsConfig: true  # Enable Private Data Collections
+
+## Monitoring Configuration
+monitoring:
+  enabled: true
+  
+  prometheus:
+    enabled: true
+    retention: 30d
+    storageSize: 50Gi
+  
+  grafana:
+    enabled: true
+    adminPassword: ""  # Auto-generated
+    dashboards:
+      - passchain-overview
+      - fabric-metrics
+      - vault-metrics
+      - api-performance
+
+## Logging Configuration
+logging:
+  enabled: true
+  
+  loki:
+    enabled: true
+    retention: 30d
+    storageSize: 50Gi
+  
+  fluentd:
+    enabled: true
+
+## Network Policies
+networkPolicies:
+  enabled: true
+  
+  # Only backend can access Vault
+  vaultAccess:
+    - backend
+  
+  # Only backend can access Fabric
+  fabricAccess:
+    - backend
+  
+  # Only backend can access PostgreSQL
+  databaseAccess:
+    - backend
+
+## Security
+security:
+  podSecurityPolicy:
+    enabled: true
+  
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+    fsGroup: 2000
+  
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
+    readOnlyRootFilesystem: true
+
+## Backup Configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  
+  postgresql:
+    enabled: true
+    retention: 30
+  
+  vault:
+    enabled: true
+    retention: 30
+  
+  fabric:
+    enabled: true
+    retention: 30
+  
+  destination:
+    type: s3
+    bucket: passchain-backups
+    region: us-east-1
+
+
+
+

@@ -1,0 +1,84 @@
+# Fabric Connection Profile for Pass Chain
+# This config is used by the Fabric SDK in the backend
+
+name: "pass-chain-network"
+version: 1.0.0
+
+client:
+  organization: Org1
+  logging:
+    level: info
+
+  peer:
+    timeout:
+      connection: 10s
+      response: 180s
+      discovery:
+        greylistExpiry: 10s
+
+  eventService:
+    timeout:
+      connection: 15s
+      registrationResponse: 15s
+
+  orderer:
+    timeout:
+      connection: 15s
+      response: 15s
+
+  global:
+    timeout:
+      query: 180s
+      execute: 180s
+    cache:
+      connectionIdle: 30s
+      eventServiceIdle: 2m
+      channelConfig: 30m
+      channelMembership: 30s
+      discovery: 10s
+      selection: 10m
+
+channels:
+  passchain:
+    peers:
+      fabric-peer.fabric.svc.cluster.local:
+        endorsingPeer: true
+        chaincodeQuery: true
+        ledgerQuery: true
+        eventSource: true
+
+organizations:
+  Org1:
+    mspid: Org1MSP
+    cryptoPath: /tmp/msp
+    peers:
+      - fabric-peer.fabric.svc.cluster.local
+
+peers:
+  fabric-peer.fabric.svc.cluster.local:
+    url: grpc://fabric-peer.fabric.svc.cluster.local:7051
+    grpcOptions:
+      ssl-target-name-override: peer0.org1.example.com
+      keep-alive-time: 0s
+      keep-alive-timeout: 20s
+      keep-alive-permit: false
+      fail-fast: false
+      allow-insecure: true
+
+certificateAuthorities:
+  ca.example.com:
+    url: http://fabric-ca.fabric.svc.cluster.local:7054
+    httpOptions:
+      verify: false
+    registrar:
+      enrollId: admin
+      enrollSecret: adminpw
+    caName: ca.example.com
+
+entityMatchers:
+  peer:
+    - pattern: (\w*)fabric-peer(\w*)
+      urlSubstitutionExp: grpc://fabric-peer.fabric.svc.cluster.local:7051
+      sslTargetOverrideUrlSubstitutionExp: peer0.org1.example.com
+      mappedHost: fabric-peer.fabric.svc.cluster.local
+

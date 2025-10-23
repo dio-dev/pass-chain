@@ -1,0 +1,33 @@
+🎉 Pass Chain has been installed!
+
+1. Get the application URLs:
+
+{{- if eq .Values.frontend.service.type "NodePort" }}
+  export MINIKUBE_IP=$(minikube ip)
+  
+  Frontend: http://$MINIKUBE_IP:{{ .Values.frontend.service.nodePort }}
+  Backend:  http://$MINIKUBE_IP:{{ .Values.backend.service.nodePort }}
+  
+  Or use:
+  minikube service {{ include "passchain.fullname" . }}-frontend
+  minikube service {{ include "passchain.fullname" . }}-backend
+{{- else if eq .Values.frontend.service.type "LoadBalancer" }}
+  Frontend: http://$(kubectl get svc {{ include "passchain.fullname" . }}-frontend -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):{{ .Values.frontend.service.port }}
+  Backend:  http://$(kubectl get svc {{ include "passchain.fullname" . }}-backend -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):{{ .Values.backend.service.port }}
+{{- else }}
+  kubectl port-forward svc/{{ include "passchain.fullname" . }}-frontend {{ .Values.frontend.service.port }}:{{ .Values.frontend.service.port }}
+  kubectl port-forward svc/{{ include "passchain.fullname" . }}-backend {{ .Values.backend.service.port }}:{{ .Values.backend.service.port }}
+{{- end }}
+
+2. View pod status:
+  kubectl get pods -n {{ .Release.Namespace }}
+
+3. View logs:
+  kubectl logs -f deployment/{{ include "passchain.fullname" . }}-backend -n {{ .Release.Namespace }}
+  kubectl logs -f deployment/{{ include "passchain.fullname" . }}-frontend -n {{ .Release.Namespace }}
+
+4. Vault access (dev mode):
+  Vault Token: {{ .Values.vault.server.dev.devRootToken | default "root-token-dev" }}
+  
+🔐 AUUUUFFFF! Your decentralized password manager is ready!
+

@@ -1,0 +1,93 @@
+# General
+.DS_Store
+.env
+.env.local
+.env.*.local
+*.log
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/dist/
+frontend/.turbo/
+frontend/.cache/
+frontend/coverage/
+frontend/pnpm-lock.yaml
+
+# Backend
+backend/bin/
+backend/tmp/
+backend/vendor/
+backend/coverage.out
+backend/*.test
+backend/*.prof
+
+# Blockchain
+blockchain/channel-artifacts/
+blockchain/crypto-config/
+blockchain/ledgers-backup/
+blockchain/organizations/
+blockchain/system-genesis-block/
+blockchain/*.tar.gz
+
+# Infrastructure
+infrastructure/.terraform/
+infrastructure/*.tfstate
+infrastructure/*.tfstate.*
+infrastructure/*.tfplan
+infrastructure/*.tfvars
+infrastructure/crash.log
+infrastructure/override.tf
+infrastructure/override.tf.json
+infrastructure/*_override.tf
+infrastructure/*_override.tf.json
+infrastructure/.terragrunt-cache/
+
+# Kubernetes
+infrastructure/k8s/secrets/
+*.kubeconfig
+
+# Docker
+docker-compose.override.yml
+
+# Vault
+vault-data/
+*.hcl.backup
+
+# Secrets
+*.key
+*.pem
+*.crt
+*.p12
+secrets/
+credentials/
+
+# Build artifacts
+build/
+dist/
+target/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Test artifacts
+test-results/
+playwright-report/
+coverage/
+*.coverprofile
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+
+
+

@@ -1,0 +1,312 @@
+# Pass Chain Helm Chart Values - Minikube Edition
+
+## Global Configuration
+global:
+  environment: development
+  domain: passchain.local
+  
+## Frontend Configuration
+frontend:
+  enabled: true
+  replicaCount: 1  # Reduced for Minikube
+  
+  image:
+    repository: passchain/frontend
+    tag: "2.0.0"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: NodePort  # Changed from ClusterIP for local access
+    port: 3000
+    nodePort: 30300
+  
+  ingress:
+    enabled: false  # Disabled for Minikube (use NodePort)
+  
+  resources:
+    requests:
+      cpu: 50m      # Reduced for Minikube
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+  
+  autoscaling:
+    enabled: false  # Disabled for Minikube
+  
+  env:
+    NEXT_PUBLIC_API_URL: http://localhost:30800/api/v1
+    NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID: "demo-project-id"
+
+## Backend Configuration
+backend:
+  enabled: true
+  replicaCount: 1  # Reduced for Minikube
+  
+  image:
+    repository: passchain/backend
+    tag: "2.0.0"
+    pullPolicy: IfNotPresent
+  
+  service:
+    type: NodePort  # Changed from ClusterIP for local access
+    port: 8080
+    nodePort: 30800
+  
+  ingress:
+    enabled: false  # Disabled for Minikube
+  
+  resources:
+    requests:
+      cpu: 100m     # Reduced for Minikube
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  
+  autoscaling:
+    enabled: false  # Disabled for Minikube
+  
+  env:
+    ENVIRONMENT: development
+    PORT: "8080"
+    DB_HOST: passchain-postgresql
+    DB_PORT: "5432"
+    DB_NAME: passchain
+    VAULT_ADDR: http://passchain-vault:8200
+    REDIS_ADDR: passchain-redis-master:6379
+    FABRIC_CONFIG_PATH: /etc/fabric/network.yaml
+    FABRIC_CHANNEL_ID: passchain
+    FABRIC_CHAINCODE_NAME: credentials
+  
+  secrets:
+    DB_USER: postgres
+    DB_PASSWORD: "passchain123"
+    VAULT_TOKEN: "dev-only-token"
+    JWT_SECRET: "dev-jwt-secret-key"
+
+## PostgreSQL Configuration
+postgresql:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: "latest"              # Use latest stable
+  auth:
+    username: postgres
+    password: "passchain123"
+    database: passchain
+  
+  primary:
+    persistence:
+      enabled: true
+      size: 10Gi              # Reduced for Minikube
+      storageClass: "standard"  # Minikube default storage class
+    
+    resources:
+      requests:
+        cpu: 100m             # Reduced for Minikube
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  
+  readReplicas:
+    replicaCount: 0           # Disabled for Minikube
+
+## Redis Configuration
+redis:
+  enabled: true
+  image:
+    registry: docker.io
+    repository: bitnami/redis
+    tag: "latest"              # Use latest stable
+  architecture: standalone    # Changed from replication for Minikube
+  auth:
+    enabled: true
+    password: "redis123"
+  
+  master:
+    persistence:
+      enabled: true
+      size: 5Gi               # Reduced for Minikube
+      storageClass: "standard"
+    resources:
+      requests:
+        cpu: 50m              # Reduced for Minikube
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
+  
+  replica:
+    replicaCount: 0           # Disabled for Minikube
+
+## HashiCorp Vault Configuration
+vault:
+  enabled: true
+  server:
+    dev:
+      enabled: true           # DEV MODE for Minikube!
+      devRootToken: "dev-only-token"
+    
+    ha:
+      enabled: false          # Disabled for Minikube (use dev mode)
+    
+    standalone:
+      enabled: false          # Disabled when dev mode is on
+    
+    resources:
+      requests:
+        cpu: 100m             # Reduced for Minikube
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    
+    dataStorage:
+      enabled: false          # Disabled in dev mode
+    
+    auditStorage:
+      enabled: false          # Disabled in dev mode
+    
+    service:
+      type: NodePort          # For local access
+      nodePort: 30200
+  
+  injector:
+    enabled: false            # Disabled for Minikube
+  
+  ui:
+    enabled: true             # Enable Vault UI
+
+## Hyperledger Fabric Configuration
+fabric:
+  enabled: true
+  
+  # Organization: OrgVault
+  orgVault:
+    enabled: true
+    mspId: OrgVaultMSP
+    
+    peers:
+      - name: peer0
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 200m         # Reduced for Minikube
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        storage:
+          size: 10Gi          # Reduced for Minikube
+          storageClass: "standard"
+  
+  # Organization: OrgAudit  
+  orgAudit:
+    enabled: true
+    mspId: OrgAuditMSP
+    
+    peers:
+      - name: peer0
+        replicaCount: 1
+        resources:
+          requests:
+            cpu: 200m         # Reduced for Minikube
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        storage:
+          size: 10Gi          # Reduced for Minikube
+          storageClass: "standard"
+  
+  # Orderer Configuration
+  orderers:
+    replicaCount: 1           # Reduced from 3 for Minikube
+    consensusType: solo       # Changed from raft for simplicity
+    
+    resources:
+      requests:
+        cpu: 200m             # Reduced for Minikube
+        memory: 512Mi
+      limits:
+        cpu: 1000m
+        memory: 1Gi
+    
+    storage:
+      size: 5Gi               # Reduced for Minikube
+      storageClass: "standard"
+  
+  # Channel Configuration
+  channel:
+    name: passchain
+    organizations:
+      - OrgVaultMSP
+      - OrgAuditMSP
+  
+  # Chaincode Configuration
+  chaincode:
+    name: credentials
+    version: "2.0"
+    language: golang
+    endorsementPolicy: "AND('OrgVaultMSP.peer','OrgAuditMSP.peer')"
+    collectionsConfig: true
+
+## Monitoring Configuration
+monitoring:
+  enabled: false              # Disabled for Minikube (use later)
+  
+  prometheus:
+    enabled: false
+  
+  grafana:
+    enabled: false
+
+## Logging Configuration
+logging:
+  enabled: false              # Disabled for Minikube
+
+## Network Policies
+networkPolicies:
+  enabled: false              # Disabled for Minikube simplicity
+
+## Security
+security:
+  podSecurityPolicy:
+    enabled: false            # Disabled for Minikube
+  
+  podSecurityContext:
+    runAsNonRoot: false       # Relaxed for Minikube
+    runAsUser: 1000
+  
+  securityContext:
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: false  # Relaxed for Minikube
+
+## Backup Configuration
+backup:
+  enabled: false              # Disabled for Minikube
+
+## Minikube-Specific Notes
+# 
+# This configuration is optimized for Minikube with:
+# - Reduced resource requirements
+# - Single replicas (no HA)
+# - NodePort services (no Ingress)
+# - Dev mode Vault (no production security)
+# - Standard storage class
+# - Monitoring/logging disabled
+#
+# Minimum Minikube requirements:
+# - CPUs: 4
+# - Memory: 8GB
+# - Disk: 40GB
+#
+# Start Minikube with:
+# minikube start --cpus=4 --memory=8192 --disk-size=40g
+
+
+
+

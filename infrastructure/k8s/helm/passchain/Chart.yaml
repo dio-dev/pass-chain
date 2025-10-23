@@ -1,0 +1,37 @@
+apiVersion: v2
+name: passchain
+description: Pass Chain - Decentralized Password Management with Hyperledger Fabric
+type: application
+version: 2.0.0
+appVersion: "2.0"
+
+keywords:
+  - blockchain
+  - password-manager
+  - vault
+  - hyperledger-fabric
+  - web3
+
+maintainers:
+  - name: Pass Chain Team
+    email: devops@passchain.io
+
+dependencies:
+  - name: postgresql
+    version: "12.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+  
+  - name: redis
+    version: "17.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled
+  
+  - name: vault
+    version: "0.25.x"
+    repository: "https://helm.releases.hashicorp.com"
+    condition: vault.enabled
+
+
+
+

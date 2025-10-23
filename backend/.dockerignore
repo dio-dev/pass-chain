@@ -1,0 +1,11 @@
+bin/
+tmp/
+vendor/
+*.test
+*.prof
+.env
+coverage.out
+
+
+
+
