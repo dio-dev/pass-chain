@@ -1,34 +1,38 @@
+---
+hidden: true
+---
+
 # Frontend - Pass Chain Web Application
 
 Next.js-based frontend for Pass Chain password management system.
 
 ## Tech Stack
 
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Styling
-- **RainbowKit + Wagmi** - Web3 wallet integration
-- **TanStack Query** - Data fetching
-- **Zustand** - State management
-- **Framer Motion** - Animations
-- **Zod** - Validation
+* **Next.js 14** - React framework with App Router
+* **TypeScript** - Type safety
+* **Tailwind CSS** - Styling
+* **RainbowKit + Wagmi** - Web3 wallet integration
+* **TanStack Query** - Data fetching
+* **Zustand** - State management
+* **Framer Motion** - Animations
+* **Zod** - Validation
 
 ## Features
 
-- 🔐 **Wallet Authentication** - Connect with MetaMask, WalletConnect, etc.
-- 📝 **Credential Management** - Store and manage passwords
-- 🔓 **Secure Reveal** - Decrypt credentials with payment
-- 📊 **Usage Dashboard** - View access logs and analytics
-- 💰 **Payment Integration** - Pay for storage and access
-- 🎨 **Modern UI** - Beautiful, responsive design
-- ♿ **Accessible** - WCAG compliant components
+* 🔐 **Wallet Authentication** - Connect with MetaMask, WalletConnect, etc.
+* 📝 **Credential Management** - Store and manage passwords
+* 🔓 **Secure Reveal** - Decrypt credentials with payment
+* 📊 **Usage Dashboard** - View access logs and analytics
+* 💰 **Payment Integration** - Pay for storage and access
+* 🎨 **Modern UI** - Beautiful, responsive design
+* ♿ **Accessible** - WCAG compliant components
 
 ## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- npm or pnpm
+* Node.js 18+
+* npm or pnpm
 
 ### Installation
 
@@ -118,13 +122,13 @@ export const useAuthStore = create((set) => ({
 
 ## Available Scripts
 
-- `pnpm dev` - Start development server
-- `pnpm build` - Build for production
-- `pnpm start` - Start production server
-- `pnpm lint` - Run ESLint
-- `pnpm type-check` - Run TypeScript checks
-- `pnpm test` - Run Jest tests
-- `pnpm test:e2e` - Run Playwright E2E tests
+* `pnpm dev` - Start development server
+* `pnpm build` - Build for production
+* `pnpm start` - Start production server
+* `pnpm lint` - Run ESLint
+* `pnpm type-check` - Run TypeScript checks
+* `pnpm test` - Run Jest tests
+* `pnpm test:e2e` - Run Playwright E2E tests
 
 ## Styling
 
@@ -167,17 +171,17 @@ docker run -p 3000:3000 pass-chain-frontend
 
 ## Security
 
-- All encryption happens client-side
-- Private keys never leave the browser
-- Wallet signatures for authentication
-- HTTPS enforced in production
+* All encryption happens client-side
+* Private keys never leave the browser
+* Wallet signatures for authentication
+* HTTPS enforced in production
 
 ## Browser Support
 
-- Chrome/Edge (Chromium) 90+
-- Firefox 90+
-- Safari 14+
-- Opera 80+
+* Chrome/Edge (Chromium) 90+
+* Firefox 90+
+* Safari 14+
+* Opera 80+
 
 ## Contributing
 
@@ -190,7 +194,3 @@ docker run -p 3000:3000 pass-chain-frontend
 ## License
 
 MIT
-
-
-
-
