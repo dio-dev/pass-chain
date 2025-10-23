@@ -1,33 +1,27 @@
 # Pass Chain Documentation
 
 <div align="center">
-  <img src="https://via.placeholder.com/150/8B5CF6/FFFFFF?text=🔐" alt="Pass Chain Logo" width="150"/>
-  
-  <h3>The Future of Password Management</h3>
-  
-  <p>
-    <a href="https://github.com/yourusername/pass-chain"><img src="https://img.shields.io/github/stars/yourusername/pass-chain?style=social" alt="GitHub stars"/></a>
-    <a href="https://github.com/yourusername/pass-chain/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"/></a>
-    <a href="https://github.com/yourusername/pass-chain"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"/></a>
-  </p>
+
+![Pass Chain](https://img.shields.io/badge/Pass%20Chain-v1.0-purple?style=for-the-badge)
+[![License](https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)](../LICENSE)
+[![GitHub](https://img.shields.io/github/stars/yourusername/pass-chain?style=for-the-badge&logo=github)](https://github.com/yourusername/pass-chain)
+
+**Secure, decentralized password management with blockchain audit trail**
+
+[Quick Start](#quick-start) • [Architecture](#architecture) • [Security](#security) • [API](#api) • [Deploy](#deployment)
+
 </div>
 
 ---
 
-## What is Pass Chain?
+## 🚀 Quick Start
 
-Pass Chain is a revolutionary password manager that combines:
-
-- 🔐 **Zero-Knowledge Encryption** - We literally can't decrypt your passwords
-- 🔑 **Split-Key Security** - Encryption key split across Vault, blockchain, and your device
-- 👛 **Wallet Authentication** - Use MetaMask instead of master passwords
-- ⛓️ **Blockchain Audit Trail** - Immutable logs on Hyperledger Fabric
-- 🚀 **Enterprise Ready** - Kubernetes deployment, SOC2 compliant
-
-## Quick Start
+Get Pass Chain running in 5 minutes:
 
 ```bash
-# Start everything
+# Clone and start
+git clone https://github.com/yourusername/pass-chain
+cd pass-chain
 ./start-minikube.ps1
 
 # Port forward backend
@@ -39,131 +33,142 @@ cd frontend && npm run dev
 
 Visit http://localhost:3000
 
-## Why Pass Chain?
+**[Full Quick Start Guide →](getting-started/quickstart.md)**
 
-### Traditional Password Managers
-- ❌ Trust the company not to decrypt
-- ❌ Single point of failure (master password)
-- ❌ Centralized database (honeypot for hackers)
-- ❌ No audit trail
+---
 
-### Pass Chain
-- ✅ **Mathematically impossible** for us to decrypt
-- ✅ **Split-key** - need 2 of 3 parts + wallet signature
-- ✅ **Distributed** - Vault + Blockchain + Your device
-- ✅ **Immutable audit logs** on blockchain
+## 📚 Documentation
 
-## Architecture at a Glance
+### Getting Started
+- 📖 [Quick Start](getting-started/quickstart.md)
+- 🔧 [Installation](getting-started/installation.md)
+- 🎯 [First Credential](getting-started/first-credential.md)
+
+### Architecture
+- 🏗️ [System Overview](architecture/overview.md)
+- 🔐 [Encryption Deep Dive](architecture/encryption.md)
+- 🔑 [Split-Key Security](architecture/split-key.md)
+- 👛 [Wallet Authentication](architecture/wallet-auth.md)
+- ⛓️ [Blockchain Integration](architecture/blockchain.md)
+
+### Deployment
+- ☸️ [Kubernetes Setup](deployment/kubernetes.md)
+- ☁️ [AWS Deployment](deployment/aws.md)
+- 🌐 [GKE Deployment](deployment/gke.md)
+- 🔐 [Vault Configuration](deployment/vault.md)
+- ⛓️ [Fabric Setup](deployment/fabric.md)
+
+### Security
+- 🛡️ [Security Model](security/model.md)
+- ⚠️ [Threat Analysis](security/threats.md)
+- ✅ [Best Practices](security/best-practices.md)
+- 📋 [Compliance (SOC2/GDPR)](security/compliance.md)
+
+### API Reference
+- 🔌 [Backend REST API](api/backend.md)
+- ⛓️ [Fabric Chaincode](api/chaincode.md)
+- 💻 [Frontend SDK](api/frontend.md)
+
+### Development
+- 💻 [Dev Setup](development/setup.md)
+- 🤝 [Contributing](development/contributing.md)
+- 🧪 [Testing](development/testing.md)
+- 🐛 [Debugging](development/debugging.md)
+
+### FAQ
+- ❓ [General Questions](faq/general.md)
+- 🔒 [Security Questions](faq/security.md)
+- 🔧 [Troubleshooting](faq/troubleshooting.md)
+
+---
+
+## 💡 What is Pass Chain?
+
+Pass Chain is a revolutionary password manager that uses:
+
+- 🔐 **Zero-Knowledge Encryption** - We literally can't decrypt your passwords
+- 🔑 **Split-Key Security** - Key split across Vault, blockchain, and your device
+- 👛 **Wallet Authentication** - Use MetaMask instead of master passwords
+- ⛓️ **Blockchain Audit Trail** - Immutable logs on Hyperledger Fabric
+- ☸️ **Enterprise Ready** - Kubernetes deployment, SOC2 compliant
+
+### How It Works
 
 ```
-┌──────────────┐
-│   Browser    │  Encrypt with XChaCha20-Poly1305
-│   (Client)   │  Split key into 3 shares
-└──────┬───────┘
-       │
-       ├─────────┐
-       │         │
-   ┌───▼──┐  ┌───▼────────┐  ┌──────────────┐
-   │Vault │  │Blockchain  │  │localStorage  │
-   │(S1)  │  │(S2)        │  │(S3 - Backup) │
-   └──────┘  └────────────┘  └──────────────┘
-   
-   🔐 Need any 2 + wallet signature to decrypt
+1. Enter password → 2. Encrypt in browser → 3. Split key into 3 parts
+                    ↓
+    Part 1 → Vault | Part 2 → Blockchain | Part 3 → Your device
+                    ↓
+4. To decrypt: Wallet signature + any 2 of 3 parts
 ```
 
-## Key Features
+**[Deep Dive into Architecture →](architecture/overview.md)**
 
-| Feature | Description |
-|---------|-------------|
-| **Client-Side Encryption** | Passwords encrypted in browser using XChaCha20-Poly1305 |
-| **Shamir Secret Sharing** | 2-of-3 threshold, distributed across systems |
-| **Web3 Authentication** | MetaMask/WalletConnect, no master password |
-| **Blockchain Logs** | Every access recorded on Hyperledger Fabric |
-| **Zero-Knowledge** | Backend never sees plaintext |
-| **Kubernetes Native** | Production-ready infrastructure |
+---
 
-## Documentation Structure
+## 🛡️ Security Guarantees
 
-### 📚 Getting Started
-- [Quick Start Guide](getting-started/quickstart.md)
-- [Installation](getting-started/installation.md)
-- [Your First Credential](getting-started/first-credential.md)
+| What We **CAN'T** Do | What You **GET** |
+|----------------------|------------------|
+| ❌ Decrypt your passwords | ✅ Client-side encryption |
+| ❌ Access your credentials | ✅ Split-key architecture |
+| ❌ See plaintext data | ✅ Blockchain audit trail |
+| ❌ Recover without wallet | ✅ Complete control |
 
-### 🏗️ Architecture
-- [System Overview](architecture/overview.md)
-- [Encryption Deep Dive](architecture/encryption.md)
-- [Split-Key Mechanics](architecture/split-key.md)
-- [Wallet Authentication](architecture/wallet-auth.md)
-- [Blockchain Integration](architecture/blockchain.md)
+**[Security Model →](security/model.md)**
 
-### 🚀 Deployment
-- [Kubernetes Setup](deployment/kubernetes.md)
-- [AWS Deployment](deployment/aws.md)
-- [GKE Deployment](deployment/gke.md)
-- [Vault Configuration](deployment/vault.md)
-- [Fabric Setup](deployment/fabric.md)
+---
 
-### 🔒 Security
-- [Security Model](security/model.md)
-- [Threat Analysis](security/threats.md)
-- [Best Practices](security/best-practices.md)
-- [Compliance (SOC2/GDPR)](security/compliance.md)
+## 🏗️ Tech Stack
 
-### 📖 API Reference
-- [Backend REST API](api/backend.md)
-- [Fabric Chaincode](api/chaincode.md)
-- [Frontend SDK](api/frontend.md)
+**Frontend**: React, Next.js 14, TailwindCSS, Web3.js, Wagmi  
+**Backend**: Go 1.21, Gin, GORM, Fabric SDK  
+**Infrastructure**: Kubernetes, Vault, PostgreSQL, Redis, Fabric  
+**Blockchain**: Hyperledger Fabric 2.5
 
-### 💻 Development
-- [Development Setup](development/setup.md)
-- [Contributing Guidelines](development/contributing.md)
-- [Testing](development/testing.md)
-- [Debugging](development/debugging.md)
+**[Full Stack Details →](../ProjectStack.md)**
 
-## Technology Stack
+---
 
-**Frontend**
-- React, Next.js 14
-- TailwindCSS
-- Web3.js, Wagmi, RainbowKit
-- @noble/ciphers (encryption)
+## 📦 Project Structure
 
-**Backend**
-- Go 1.21
-- Gin (web framework)
-- GORM (ORM)
-- Fabric SDK Go
+```
+pass-chain/
+├── frontend/          # React/Next.js app
+├── backend/           # Go API server
+├── blockchain/        # Fabric chaincode
+├── infrastructure/    # K8s manifests
+└── docs/             # This documentation
+```
 
-**Infrastructure**
-- Kubernetes (Minikube, GKE, EKS)
-- HashiCorp Vault
-- PostgreSQL 15
-- Redis
-- Hyperledger Fabric 2.5
+---
 
-## Security Guarantees
+## 🤝 Contributing
 
-1. **Zero-Knowledge**: Backend mathematically cannot decrypt your passwords
-2. **Split-Key**: Need 2 of 3 key shares + wallet signature
-3. **Client-Side**: Encryption happens in browser, never on server
-4. **Immutable Logs**: All access logged on blockchain
-5. **No Master Password**: Wallet signature is your auth
+We welcome contributions! See [Contributing Guide](development/contributing.md)
 
-## Community
+---
 
-- 🌟 [Star us on GitHub](https://github.com/yourusername/pass-chain)
-- 💬 [Join Discord](https://discord.gg/passchain)
-- 🐦 [Follow on Twitter](https://twitter.com/passchain)
-- 📧 [Email Support](mailto:support@passchain.io)
+## 📄 License
 
-## License
+MIT License - see [LICENSE](../LICENSE)
 
-MIT License - see [LICENSE](https://github.com/yourusername/pass-chain/blob/main/LICENSE)
+---
+
+## 🔗 Links
+
+- 🏠 [Main Site](https://passchain.io)
+- 💻 [GitHub](https://github.com/yourusername/pass-chain)
+- 📖 [Documentation](https://docs.passchain.io)
+- 💬 [Discord](https://discord.gg/passchain)
+- 🐦 [Twitter](https://twitter.com/passchain)
 
 ---
 
 <div align="center">
-  <p><strong>Built with ❤️ by developers who care about security</strong></p>
-  <p><i>AUUUUFFFF! 🔥</i></p>
-</div>
 
+**Built with ❤️ by developers who care about security**
+
+*AUUUUFFFF!* 🔥
+
+</div>

@@ -1,6 +1,4 @@
-# GitBook Setup
-
-name: Deploy GitBook
+name: Deploy Documentation
 
 on:
   push:
@@ -19,21 +17,20 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: docs/package-lock.json
       
-      - name: Install GitBook CLI
-        run: |
-          npm install -g gitbook-cli
-          gitbook install ./docs
+      - name: Install dependencies
+        working-directory: ./docs
+        run: npm ci
       
-      - name: Build GitBook
-        run: |
-          cd docs
-          gitbook build
+      - name: Build Docusaurus
+        working-directory: ./docs
+        run: npm run build
       
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./docs/_book
+          publish_dir: ./docs/build
           cname: docs.passchain.io
-

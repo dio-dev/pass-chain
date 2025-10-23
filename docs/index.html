@@ -1,333 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pass Chain - The Future of Password Management</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Pass Chain Documentation</title>
+    <meta http-equiv="refresh" content="0; url=README.md">
     <style>
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
-        .float-animation { animation: float 3s ease-in-out infinite; }
-        
-        @keyframes glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(139, 92, 246, 0.5); }
-            50% { box-shadow: 0 0 40px rgba(139, 92, 246, 0.8); }
+        .container {
+            text-center;
+            padding: 2rem;
         }
-        .glow-animation { animation: glow 2s ease-in-out infinite; }
+        h1 { font-size: 3rem; margin-bottom: 1rem; }
+        p { font-size: 1.2rem; opacity: 0.9; }
+        .spinner {
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 2rem auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-    <!-- Navigation -->
-    <nav class="fixed w-full z-50 bg-slate-900/80 backdrop-blur-md border-b border-purple-500/20">
-        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
-            <div class="flex items-center space-x-2">
-                <svg class="h-8 w-8 text-purple-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/>
-                </svg>
-                <span class="text-2xl font-bold">Pass Chain</span>
-            </div>
-            <div class="hidden md:flex space-x-8">
-                <a href="#features" class="hover:text-purple-400 transition">Features</a>
-                <a href="#how-it-works" class="hover:text-purple-400 transition">How It Works</a>
-                <a href="#security" class="hover:text-purple-400 transition">Security</a>
-                <a href="./docs" class="hover:text-purple-400 transition">Docs</a>
-                <a href="https://github.com/yourusername/pass-chain" class="hover:text-purple-400 transition">GitHub</a>
-            </div>
-            <button class="bg-purple-600 hover:bg-purple-700 px-6 py-2 rounded-lg font-semibold transition">
-                Launch App
-            </button>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <section class="pt-32 pb-20 px-6">
-        <div class="container mx-auto text-center">
-            <div class="float-animation mb-8">
-                <svg class="h-32 w-32 mx-auto text-purple-400 glow-animation" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"/>
-                </svg>
-            </div>
-            <h1 class="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text">
-                Password Management
-                <br/>Reimagined
-            </h1>
-            <p class="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
-                The first password manager where <span class="text-purple-400 font-bold">nobody</span> can decrypt your passwords. 
-                Not us. Not hackers. Not even the NSA.
-            </p>
-            <div class="flex flex-col md:flex-row gap-4 justify-center">
-                <button class="bg-purple-600 hover:bg-purple-700 px-8 py-4 rounded-lg text-lg font-semibold transition transform hover:scale-105">
-                    🚀 Get Started
-                </button>
-                <button class="border-2 border-purple-400 hover:bg-purple-400/10 px-8 py-4 rounded-lg text-lg font-semibold transition">
-                    📖 Read Docs
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features -->
-    <section id="features" class="py-20 px-6 bg-slate-900/50">
-        <div class="container mx-auto">
-            <h2 class="text-5xl font-bold text-center mb-16">Why Pass Chain?</h2>
-            <div class="grid md:grid-cols-3 gap-8">
-                <!-- Feature 1 -->
-                <div class="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-8 hover:border-purple-500/40 transition">
-                    <div class="text-5xl mb-4">🔐</div>
-                    <h3 class="text-2xl font-bold mb-4">True Zero-Knowledge</h3>
-                    <p class="text-gray-300">
-                        Your passwords are encrypted in your browser. Our servers never see plaintext. 
-                        Even we can't decrypt them.
-                    </p>
-                </div>
-
-                <!-- Feature 2 -->
-                <div class="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-8 hover:border-purple-500/40 transition">
-                    <div class="text-5xl mb-4">🔑</div>
-                    <h3 class="text-2xl font-bold mb-4">Split-Key Security</h3>
-                    <p class="text-gray-300">
-                        Your encryption key is split into 3 parts. Vault, blockchain, and your device. 
-                        All 3 needed to decrypt.
-                    </p>
-                </div>
-
-                <!-- Feature 3 -->
-                <div class="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-8 hover:border-purple-500/40 transition">
-                    <div class="text-5xl mb-4">👛</div>
-                    <h3 class="text-2xl font-bold mb-4">Wallet Authentication</h3>
-                    <p class="text-gray-300">
-                        Use MetaMask or any Web3 wallet. No passwords to remember. 
-                        Your crypto wallet is your identity.
-                    </p>
-                </div>
-
-                <!-- Feature 4 -->
-                <div class="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-8 hover:border-purple-500/40 transition">
-                    <div class="text-5xl mb-4">⛓️</div>
-                    <h3 class="text-2xl font-bold mb-4">Blockchain Audit Trail</h3>
-                    <p class="text-gray-300">
-                        Every access is logged on Hyperledger Fabric. Immutable, tamper-proof audit logs.
-                    </p>
-                </div>
-
-                <!-- Feature 5 -->
-                <div class="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-8 hover:border-purple-500/40 transition">
-                    <div class="text-5xl mb-4">🚀</div>
-                    <h3 class="text-2xl font-bold mb-4">Enterprise Ready</h3>
-                    <p class="text-gray-300">
-                        Kubernetes deployment, high availability, SOC2 compliant. 
-                        Built for production from day one.
-                    </p>
-                </div>
-
-                <!-- Feature 6 -->
-                <div class="bg-slate-800/50 backdrop-blur-sm border border-purple-500/20 rounded-xl p-8 hover:border-purple-500/40 transition">
-                    <div class="text-5xl mb-4">🔓</div>
-                    <h3 class="text-2xl font-bold mb-4">Open Source</h3>
-                    <p class="text-gray-300">
-                        Fully open source. Audit the code yourself. 
-                        No backdoors, no secrets, complete transparency.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works -->
-    <section id="how-it-works" class="py-20 px-6">
-        <div class="container mx-auto">
-            <h2 class="text-5xl font-bold text-center mb-16">How It Works</h2>
-            <div class="max-w-4xl mx-auto space-y-8">
-                <!-- Step 1 -->
-                <div class="flex gap-6 items-start">
-                    <div class="bg-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl flex-shrink-0">
-                        1
-                    </div>
-                    <div>
-                        <h3 class="text-2xl font-bold mb-2">Connect Your Wallet</h3>
-                        <p class="text-gray-300">
-                            Use MetaMask, WalletConnect, or any Web3 wallet. Your wallet address is your identity.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 2 -->
-                <div class="flex gap-6 items-start">
-                    <div class="bg-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl flex-shrink-0">
-                        2
-                    </div>
-                    <div>
-                        <h3 class="text-2xl font-bold mb-2">Encrypt in Your Browser</h3>
-                        <p class="text-gray-300">
-                            Your password is encrypted using military-grade XChaCha20-Poly1305 encryption. 
-                            This happens entirely in your browser - we never see your plaintext password.
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 3 -->
-                <div class="flex gap-6 items-start">
-                    <div class="bg-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl flex-shrink-0">
-                        3
-                    </div>
-                    <div>
-                        <h3 class="text-2xl font-bold mb-2">Split the Key</h3>
-                        <p class="text-gray-300">
-                            The encryption key is split into 3 parts using Shamir Secret Sharing:
-                            <br/>• Part 1 → HashiCorp Vault (secure storage)
-                            <br/>• Part 2 → Hyperledger Fabric (blockchain)
-                            <br/>• Part 3 → Your device (backup)
-                        </p>
-                    </div>
-                </div>
-
-                <!-- Step 4 -->
-                <div class="flex gap-6 items-start">
-                    <div class="bg-purple-600 text-white rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl flex-shrink-0">
-                        4
-                    </div>
-                    <div>
-                        <h3 class="text-2xl font-bold mb-2">Retrieve Securely</h3>
-                        <p class="text-gray-300">
-                            To decrypt, you need: Your wallet signature + any 2 of 3 key parts. 
-                            Even if Vault OR blockchain is compromised, your passwords stay safe.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Security -->
-    <section id="security" class="py-20 px-6 bg-slate-900/50">
-        <div class="container mx-auto">
-            <h2 class="text-5xl font-bold text-center mb-16">Security First</h2>
-            <div class="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-                <div>
-                    <h3 class="text-3xl font-bold mb-6 text-purple-400">What We Can't Do</h3>
-                    <ul class="space-y-4 text-lg">
-                        <li class="flex items-start gap-3">
-                            <span class="text-red-400">❌</span>
-                            <span>Decrypt your passwords</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-red-400">❌</span>
-                            <span>Access your credentials</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-red-400">❌</span>
-                            <span>See your plaintext data</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-red-400">❌</span>
-                            <span>Recover your passwords without your wallet</span>
-                        </li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 class="text-3xl font-bold mb-6 text-green-400">What You Get</h3>
-                    <ul class="space-y-4 text-lg">
-                        <li class="flex items-start gap-3">
-                            <span class="text-green-400">✅</span>
-                            <span>Client-side encryption</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-green-400">✅</span>
-                            <span>Split-key architecture</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-green-400">✅</span>
-                            <span>Blockchain audit trail</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="text-green-400">✅</span>
-                            <span>Complete control over your data</span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Tech Stack -->
-    <section class="py-20 px-6">
-        <div class="container mx-auto text-center">
-            <h2 class="text-5xl font-bold mb-16">Built With Modern Tech</h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
-                <div class="bg-slate-800/50 p-6 rounded-xl border border-purple-500/20">
-                    <div class="text-4xl mb-2">⚛️</div>
-                    <div class="font-bold">React/Next.js</div>
-                </div>
-                <div class="bg-slate-800/50 p-6 rounded-xl border border-purple-500/20">
-                    <div class="text-4xl mb-2">🔵</div>
-                    <div class="font-bold">Go Lang</div>
-                </div>
-                <div class="bg-slate-800/50 p-6 rounded-xl border border-purple-500/20">
-                    <div class="text-4xl mb-2">🔐</div>
-                    <div class="font-bold">HashiCorp Vault</div>
-                </div>
-                <div class="bg-slate-800/50 p-6 rounded-xl border border-purple-500/20">
-                    <div class="text-4xl mb-2">⛓️</div>
-                    <div class="font-bold">Hyperledger Fabric</div>
-                </div>
-                <div class="bg-slate-800/50 p-6 rounded-xl border border-purple-500/20">
-                    <div class="text-4xl mb-2">☸️</div>
-                    <div class="font-bold">Kubernetes</div>
-                </div>
-                <div class="bg-slate-800/50 p-6 rounded-xl border border-purple-500/20">
-                    <div class="text-4xl mb-2">🐘</div>
-                    <div class="font-bold">PostgreSQL</div>
-                </div>
-                <div class="bg-slate-800/50 p-6 rounded-xl border border-purple-500/20">
-                    <div class="text-4xl mb-2">🌐</div>
-                    <div class="font-bold">Web3.js</div>
-                </div>
-                <div class="bg-slate-800/50 p-6 rounded-xl border border-purple-500/20">
-                    <div class="text-4xl mb-2">🐳</div>
-                    <div class="font-bold">Docker</div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA -->
-    <section class="py-20 px-6 bg-gradient-to-r from-purple-900 to-pink-900">
-        <div class="container mx-auto text-center">
-            <h2 class="text-5xl font-bold mb-6">Ready to Secure Your Passwords?</h2>
-            <p class="text-xl text-gray-200 mb-8">
-                Join the future of password management. No credit card required.
-            </p>
-            <div class="flex flex-col md:flex-row gap-4 justify-center">
-                <button class="bg-white text-purple-900 hover:bg-gray-100 px-8 py-4 rounded-lg text-lg font-bold transition transform hover:scale-105">
-                    🚀 Launch App
-                </button>
-                <button class="border-2 border-white hover:bg-white/10 px-8 py-4 rounded-lg text-lg font-semibold transition">
-                    ⭐ Star on GitHub
-                </button>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="py-12 px-6 bg-slate-900 border-t border-purple-500/20">
-        <div class="container mx-auto text-center">
-            <div class="flex justify-center space-x-8 mb-6">
-                <a href="./docs" class="hover:text-purple-400 transition">Documentation</a>
-                <a href="https://github.com/yourusername/pass-chain" class="hover:text-purple-400 transition">GitHub</a>
-                <a href="#" class="hover:text-purple-400 transition">Twitter</a>
-                <a href="#" class="hover:text-purple-400 transition">Discord</a>
-            </div>
-            <p class="text-gray-400">
-                © 2025 Pass Chain. Open Source. MIT License.
-            </p>
-            <p class="text-gray-500 mt-2">
-                AUUUUFFFF! 🔥
-            </p>
-        </div>
-    </footer>
+<body>
+    <div class="container">
+        <h1>🔐 Pass Chain Docs</h1>
+        <div class="spinner"></div>
+        <p>Redirecting to documentation...</p>
+        <p style="font-size: 0.9rem; margin-top: 2rem;">
+            <a href="README.md" style="color: white;">Click here if not redirected</a>
+        </p>
+    </div>
 </body>
 </html>
 
