@@ -1,14 +1,19 @@
+---
+hidden: true
+icon: hand-wave
+---
+
 # Pass Chain
 
 Secure, decentralized password manager with blockchain audit trail.
 
 ## Features
 
-- **Client-side encryption** - Passwords encrypted in browser using XChaCha20-Poly1305
-- **Split-key security** - 2-of-3 Shamir Secret Sharing (Vault + Database + localStorage)
-- **Wallet authentication** - MetaMask/WalletConnect, no passwords needed
-- **Blockchain audit trail** - Immutable logs (Fabric integration ready)
-- **Zero-knowledge** - Backend never sees plaintext
+* **Client-side encryption** - Passwords encrypted in browser using XChaCha20-Poly1305
+* **Split-key security** - 2-of-3 Shamir Secret Sharing (Vault + Database + localStorage)
+* **Wallet authentication** - MetaMask/WalletConnect, no passwords needed
+* **Blockchain audit trail** - Immutable logs (Fabric integration ready)
+* **Zero-knowledge** - Backend never sees plaintext
 
 ## Quick Start
 
@@ -28,11 +33,11 @@ Access at http://localhost:3000
 
 ## Tech Stack
 
-**Frontend:** React, Next.js, Web3.js, TailwindCSS  
-**Backend:** Go (Gin), GORM, Zap  
-**Storage:** HashiCorp Vault, PostgreSQL, Redis  
-**Blockchain:** Hyperledger Fabric (integration ready)  
-**Infrastructure:** Kubernetes (Minikube), Helm, Docker  
+**Frontend:** React, Next.js, Web3.js, TailwindCSS\
+**Backend:** Go (Gin), GORM, Zap\
+**Storage:** HashiCorp Vault, PostgreSQL, Redis\
+**Blockchain:** Hyperledger Fabric (integration ready)\
+**Infrastructure:** Kubernetes (Minikube), Helm, Docker
 
 ## Project Structure
 
@@ -49,25 +54,26 @@ pass-chain/
 
 ## Documentation
 
-- `QUICKSTART.md` - Start guide
-- `ProjectSpec.md` - Full specifications
-- `ProjectStack.md` - Technology details
-- `ProjectPlan.md` - Development roadmap
-- `blockchain/fabric/FABRIC_SETUP.md` - Blockchain integration
+* `QUICKSTART.md` - Start guide
+* `ProjectSpec.md` - Full specifications
+* `ProjectStack.md` - Technology details
+* `ProjectPlan.md` - Development roadmap
+* `blockchain/fabric/FABRIC_SETUP.md` - Blockchain integration
 
 ## Status
 
 ✅ **Production Ready**
-- Password management fully functional
-- Split-key encryption working
-- Wallet authentication implemented
-- Blockchain explorer UI complete
-- Backend Fabric SDK integrated (awaiting peer)
+
+* Password management fully functional
+* Split-key encryption working
+* Wallet authentication implemented
+* Blockchain explorer UI complete
+* Backend Fabric SDK integrated (awaiting peer)
 
 ## License
 
 MIT
 
----
+***
 
 **AUUUUFFFF!** 🔥

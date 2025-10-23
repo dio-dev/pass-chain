@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Backend - Pass Chain API
 
 Go-based backend service for Pass Chain password management system.
@@ -27,21 +31,21 @@ backend/
 
 ## Features
 
-- **Wallet Authentication**: Verify Ethereum wallet signatures
-- **Split-Key Storage**: Shard credentials between Vault and blockchain
-- **Payment Processing**: Track storage and usage payments
-- **Audit Logging**: Immutable access logs on blockchain
-- **Rate Limiting**: Prevent abuse
-- **API Documentation**: Swagger/OpenAPI specs
+* **Wallet Authentication**: Verify Ethereum wallet signatures
+* **Split-Key Storage**: Shard credentials between Vault and blockchain
+* **Payment Processing**: Track storage and usage payments
+* **Audit Logging**: Immutable access logs on blockchain
+* **Rate Limiting**: Prevent abuse
+* **API Documentation**: Swagger/OpenAPI specs
 
 ## Prerequisites
 
-- Go 1.21 or higher
-- PostgreSQL 15+
-- Redis 7+
-- HashiCorp Vault
-- Hyperledger Fabric network
-- Docker & Docker Compose
+* Go 1.21 or higher
+* PostgreSQL 15+
+* Redis 7+
+* HashiCorp Vault
+* Hyperledger Fabric network
+* Docker & Docker Compose
 
 ## Getting Started
 
@@ -117,29 +121,33 @@ The API will be available at http://localhost:8080
 
 ### Public Endpoints
 
-- `GET /health` - Health check
-- `GET /api/v1/info` - API information
+* `GET /health` - Health check
+* `GET /api/v1/info` - API information
 
 ### Protected Endpoints (Require Wallet Authentication)
 
 #### Credentials
-- `POST /api/v1/credentials` - Create new credential
-- `GET /api/v1/credentials` - List all credentials
-- `GET /api/v1/credentials/:id` - Get credential details
-- `DELETE /api/v1/credentials/:id` - Delete credential
-- `POST /api/v1/credentials/:id/reveal` - Reveal credential (requires payment)
+
+* `POST /api/v1/credentials` - Create new credential
+* `GET /api/v1/credentials` - List all credentials
+* `GET /api/v1/credentials/:id` - Get credential details
+* `DELETE /api/v1/credentials/:id` - Delete credential
+* `POST /api/v1/credentials/:id/reveal` - Reveal credential (requires payment)
 
 #### Access Logs
-- `GET /api/v1/access-logs` - Get all access logs
-- `GET /api/v1/access-logs/:credentialId` - Get logs for specific credential
+
+* `GET /api/v1/access-logs` - Get all access logs
+* `GET /api/v1/access-logs/:credentialId` - Get logs for specific credential
 
 #### User
-- `GET /api/v1/user/profile` - Get user profile
-- `PUT /api/v1/user/profile` - Update user profile
+
+* `GET /api/v1/user/profile` - Get user profile
+* `PUT /api/v1/user/profile` - Update user profile
 
 #### Payments
-- `GET /api/v1/payments` - List payments
-- `GET /api/v1/payments/:id` - Get payment details
+
+* `GET /api/v1/payments` - List payments
+* `GET /api/v1/payments/:id` - Get payment details
 
 ## Development
 
@@ -219,23 +227,23 @@ See `../infrastructure/k8s/backend/` for Kubernetes manifests.
 
 ## Monitoring
 
-- **Metrics**: Prometheus endpoint at `/metrics`
-- **Health**: Health check at `/health`
-- **Logs**: JSON structured logs with Zap
+* **Metrics**: Prometheus endpoint at `/metrics`
+* **Health**: Health check at `/health`
+* **Logs**: JSON structured logs with Zap
 
 ## Troubleshooting
 
 ### Connection Issues
 
-- Check Vault is running and unsealed
-- Verify Fabric network is up
-- Ensure PostgreSQL and Redis are accessible
+* Check Vault is running and unsealed
+* Verify Fabric network is up
+* Ensure PostgreSQL and Redis are accessible
 
 ### Performance
 
-- Enable query caching in Redis
-- Optimize Fabric chaincode queries
-- Use connection pooling for database
+* Enable query caching in Redis
+* Optimize Fabric chaincode queries
+* Use connection pooling for database
 
 ## Contributing
 
@@ -247,7 +255,3 @@ See `../infrastructure/k8s/backend/` for Kubernetes manifests.
 ## License
 
 MIT
-
-
-
-

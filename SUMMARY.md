@@ -29,3 +29,4 @@
 * [Frontend - Pass Chain Web Application](frontend/README.md)
 * [Infrastructure - Terraform & Kubernetes](infrastructure/README.md)
   * [Pass Chain - Docker Deployment Guide](infrastructure/docker/README.md)
+* [Pass Chain - Product Documentation](pass-chain-product-documentation.md)
