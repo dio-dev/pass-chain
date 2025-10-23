@@ -1,0 +1,79 @@
+name: Deploy Backend to GKE
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  GKE_CLUSTER: pass-chain-cluster
+  GKE_ZONE: us-central1-a
+  IMAGE_NAME: pass-chain-backend
+  REGISTRY: gcr.io
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup Cloud SDK
+      uses: google-github-actions/setup-gcloud@v1
+      with:
+        service_account_key: ${{ secrets.GKE_SA_KEY }}
+        project_id: ${{ secrets.GKE_PROJECT }}
+
+    - name: Configure Docker for GCR
+      run: |
+        gcloud auth configure-docker
+
+    - name: Build Docker image
+      working-directory: ./backend
+      run: |
+        docker build -t $REGISTRY/$PROJECT_ID/$IMAGE_NAME:${{ github.sha }} \
+                     -t $REGISTRY/$PROJECT_ID/$IMAGE_NAME:latest .
+
+    - name: Push Docker image
+      run: |
+        docker push $REGISTRY/$PROJECT_ID/$IMAGE_NAME:${{ github.sha }}
+        docker push $REGISTRY/$PROJECT_ID/$IMAGE_NAME:latest
+
+    - name: Get GKE credentials
+      run: |
+        gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: '3.12.0'
+
+    - name: Deploy with Helm
+      run: |
+        helm upgrade --install passchain-backend \
+          ./infrastructure/k8s/helm/passchain \
+          --namespace passchain \
+          --create-namespace \
+          --set backend.image.repository=$REGISTRY/$PROJECT_ID/$IMAGE_NAME \
+          --set backend.image.tag=${{ github.sha }} \
+          --values infrastructure/k8s/helm/passchain/values-gke.yaml \
+          --wait
+
+    - name: Verify deployment
+      run: |
+        kubectl rollout status deployment/passchain-backend -n passchain
+        kubectl get pods -n passchain -l app=passchain-backend
+
+    - name: Run health check
+      run: |
+        kubectl wait --for=condition=ready pod -l app=passchain-backend -n passchain --timeout=300s
+        
+    - name: Get service endpoint
+      run: |
+        kubectl get service passchain-backend -n passchain
+

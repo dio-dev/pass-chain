@@ -1,0 +1,240 @@
+# GKE-specific Helm values
+
+# Frontend configuration
+frontend:
+  image:
+    repository: gcr.io/YOUR_PROJECT/pass-chain-frontend
+    tag: latest
+    pullPolicy: Always
+  
+  replicaCount: 3
+  
+  service:
+    type: LoadBalancer
+    port: 80
+    targetPort: 3000
+  
+  resources:
+    requests:
+      memory: "256Mi"
+      cpu: "250m"
+    limits:
+      memory: "512Mi"
+      cpu: "500m"
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+  env:
+    - name: NEXT_PUBLIC_API_URL
+      value: "http://passchain-backend.passchain.svc.cluster.local:8080"
+    - name: NODE_ENV
+      value: "production"
+
+# Backend configuration
+backend:
+  image:
+    repository: gcr.io/YOUR_PROJECT/pass-chain-backend
+    tag: latest
+    pullPolicy: Always
+  
+  replicaCount: 3
+  
+  service:
+    type: LoadBalancer
+    port: 8080
+  
+  resources:
+    requests:
+      memory: "512Mi"
+      cpu: "500m"
+    limits:
+      memory: "1Gi"
+      cpu: "1000m"
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPUUtilizationPercentage: 75
+
+  env:
+    - name: DB_HOST
+      value: "passchain-postgresql"
+    - name: DB_PORT
+      value: "5432"
+    - name: DB_NAME
+      value: "passchain"
+    - name: DB_USER
+      value: "passchain"
+    - name: REDIS_HOST
+      value: "passchain-redis-master"
+    - name: REDIS_PORT
+      value: "6379"
+    - name: VAULT_ADDR
+      value: "http://passchain-vault:8200"
+    - name: GO_ENV
+      value: "production"
+
+# PostgreSQL configuration (Bitnami chart)
+postgresql:
+  enabled: true
+  auth:
+    username: passchain
+    database: passchain
+    existingSecret: "postgresql-secret"
+  
+  primary:
+    persistence:
+      enabled: true
+      size: 50Gi
+      storageClass: "standard-rwo"
+    
+    resources:
+      requests:
+        memory: "2Gi"
+        cpu: "1000m"
+      limits:
+        memory: "4Gi"
+        cpu: "2000m"
+  
+  metrics:
+    enabled: true
+  
+  backup:
+    enabled: true
+    cronjob:
+      schedule: "0 2 * * *"
+
+# Redis configuration (Bitnami chart)
+redis:
+  enabled: true
+  auth:
+    existingSecret: "redis-secret"
+  
+  master:
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "standard-rwo"
+    
+    resources:
+      requests:
+        memory: "512Mi"
+        cpu: "250m"
+      limits:
+        memory: "1Gi"
+        cpu: "500m"
+  
+  replica:
+    replicaCount: 2
+    persistence:
+      enabled: true
+      size: 10Gi
+
+# Vault configuration (HashiCorp chart)
+vault:
+  enabled: true
+  
+  server:
+    ha:
+      enabled: true
+      replicas: 3
+      raft:
+        enabled: true
+        setNodeId: true
+    
+    dataStorage:
+      enabled: true
+      size: 20Gi
+      storageClass: "standard-rwo"
+    
+    auditStorage:
+      enabled: true
+      size: 10Gi
+    
+    resources:
+      requests:
+        memory: "1Gi"
+        cpu: "500m"
+      limits:
+        memory: "2Gi"
+        cpu: "1000m"
+    
+    service:
+      type: LoadBalancer
+    
+    # Auto-unseal with GCP KMS
+    extraEnvironmentVars:
+      GOOGLE_PROJECT: "YOUR_PROJECT_ID"
+      GOOGLE_REGION: "us-central1"
+    
+    extraSecretEnvironmentVars:
+      - envName: GOOGLE_APPLICATION_CREDENTIALS
+        secretName: vault-kms-key
+        secretKey: credentials.json
+
+  ui:
+    enabled: true
+    serviceType: LoadBalancer
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+  
+  hosts:
+    - host: app.passchain.io
+      paths:
+        - path: /
+          pathType: Prefix
+          backend: frontend
+    - host: api.passchain.io
+      paths:
+        - path: /
+          pathType: Prefix
+          backend: backend
+  
+  tls:
+    - secretName: passchain-tls
+      hosts:
+        - app.passchain.io
+        - api.passchain.io
+
+# Monitoring
+monitoring:
+  enabled: true
+  prometheus:
+    enabled: true
+  grafana:
+    enabled: true
+    adminPassword: "CHANGE_ME"
+
+# Logging
+logging:
+  enabled: true
+  loki:
+    enabled: true
+  
+# Network policies
+networkPolicy:
+  enabled: true
+  policyTypes:
+    - Ingress
+    - Egress
+
+# Pod security
+podSecurityPolicy:
+  enabled: true
+
+# Service mesh (optional)
+serviceMesh:
+  enabled: false
+  provider: "istio"
+

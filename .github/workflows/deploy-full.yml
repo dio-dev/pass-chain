@@ -1,0 +1,132 @@
+name: Full Deployment Pipeline
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+  GKE_CLUSTER: pass-chain-cluster
+  GKE_ZONE: us-central1-a
+
+jobs:
+  test-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Run backend tests
+        working-directory: ./backend
+        run: |
+          go test -v ./...
+
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: ./frontend
+        run: npm ci
+      
+      - name: Run tests
+        working-directory: ./frontend
+        run: npm test
+      
+      - name: Build check
+        working-directory: ./frontend
+        run: npm run build
+
+  deploy-infrastructure:
+    needs: [test-backend, test-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          service_account_key: ${{ secrets.GKE_SA_KEY }}
+          project_id: ${{ secrets.GKE_PROJECT }}
+      
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE
+      
+      - name: Setup Helm
+        uses: azure/setup-helm@v3
+        with:
+          version: '3.12.0'
+      
+      - name: Deploy infrastructure
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo add hashicorp https://helm.releases.hashicorp.com
+          helm repo update
+          
+          # Deploy Helm chart
+          helm upgrade --install passchain \
+            ./infrastructure/k8s/helm/passchain \
+            --namespace passchain \
+            --create-namespace \
+            --values infrastructure/k8s/helm/passchain/values-gke.yaml \
+            --wait
+
+  deploy-backend:
+    needs: deploy-infrastructure
+    uses: ./.github/workflows/deploy-backend.yml
+    secrets: inherit
+
+  deploy-frontend:
+    needs: deploy-infrastructure
+    uses: ./.github/workflows/deploy-frontend.yml
+    secrets: inherit
+
+  verify-deployment:
+    needs: [deploy-backend, deploy-frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Cloud SDK
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          service_account_key: ${{ secrets.GKE_SA_KEY }}
+          project_id: ${{ secrets.GKE_PROJECT }}
+      
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials $GKE_CLUSTER --zone $GKE_ZONE
+      
+      - name: Check all pods
+        run: |
+          kubectl get pods -n passchain
+          kubectl get services -n passchain
+      
+      - name: Health check backend
+        run: |
+          BACKEND_IP=$(kubectl get service passchain-backend -n passchain -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+          curl -f http://$BACKEND_IP/health || exit 1
+      
+      - name: Display URLs
+        run: |
+          echo "🎉 Deployment successful!"
+          echo ""
+          echo "Frontend URL: http://$(kubectl get service passchain-frontend -n passchain -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+          echo "Backend URL: http://$(kubectl get service passchain-backend -n passchain -o jsonpath='{.status.loadBalancer.ingress[0].ip}')"
+          echo "Vault URL: http://$(kubectl get service passchain-vault -n passchain -o jsonpath='{.status.loadBalancer.ingress[0].ip}'):8200"
+
