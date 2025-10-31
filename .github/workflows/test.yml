@@ -77,7 +77,9 @@ jobs:
         echo "Waiting for PostgreSQL..."
         timeout 30 bash -c 'until pg_isready -h localhost -p 5433 -U passchain; do sleep 1; done'
         echo "Waiting for Redis..."
-        timeout 30 bash -c 'until redis-cli -h localhost -p 6380 ping; do sleep 1; done'
+        timeout 30 bash -c 'until nc -z localhost 6380; do sleep 1; done'
+        echo "Waiting for Vault..."
+        timeout 30 bash -c 'until curl -s http://localhost:8201/v1/sys/health > /dev/null; do sleep 1; done'
         echo "✅ All services ready"
 
     - name: Run go vet
