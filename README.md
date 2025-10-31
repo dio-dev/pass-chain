@@ -2,283 +2,351 @@
 
 **Decentralized Password Manager with Zero-Knowledge Architecture**
 
+[![Test Suite](https://github.com/yourusername/pass-chain/workflows/Test%20Suite/badge.svg)](https://github.com/yourusername/pass-chain/actions)
+[![Coverage](https://codecov.io/gh/yourusername/pass-chain/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/pass-chain)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yourusername/pass-chain)](https://goreportcard.com/report/github.com/yourusername/pass-chain)
+
 Pass Chain is an enterprise-grade secrets management platform combining blockchain immutability, client-side encryption, and multi-tenant organization support. Nobody—not even Pass Chain—can decrypt your passwords.
 
----
+## ✨ Features
+
+### Core Security
+- **Client-side encryption** - Passwords encrypted in browser using XChaCha20-Poly1305
+- **Split-key security** - 2-of-3 Shamir Secret Sharing (Vault + Blockchain + User backup)
+- **Wallet authentication** - MetaMask/WalletConnect, no passwords needed
+- **Zero-knowledge** - Backend never sees plaintext credentials
+- **Blockchain audit trail** - Immutable access logs (Hyperledger Fabric)
+
+### Enterprise Features
+- **Multi-tenant organizations** - Teams, departments, projects
+- **Role-Based Access Control (RBAC)** - 6 default roles (Owner, Admin, Security Officer, Member, Auditor, Guest)
+- **Project-based vaults** - Organize credentials by projects
+- **Granular permissions** - Control who can create, read, update, delete, share, rotate
+- **Invitation system** - Invite members via wallet address
+- **Audit logs** - Full history of all actions (DB + Vault + Blockchain)
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- **Docker** & **Docker Compose**
-- **Minikube** (for local Kubernetes)
-- **kubectl**
-- **Node.js 18+** (for frontend/contracts)
-- **Go 1.23+** (for backend)
+- Docker Desktop
+- Minikube (for local Kubernetes)
+- Node.js 18+
+- Go 1.23+
 
-### Local Development
+### 1. Start Infrastructure (Kubernetes)
 
-```bash
-# 1. Start Minikube
-minikube start --cpus=4 --memory=8192
+```powershell
+# Windows
+.\start-minikube.ps1
 
-# 2. Deploy infrastructure
-cd infrastructure/k8s
-kubectl apply -f namespace.yaml
-helm install passchain-postgresql ./charts/postgresql -n passchain
-helm install passchain-redis ./charts/redis -n passchain
-helm install passchain-vault ./charts/vault -n passchain
-
-# 3. Build and deploy backend
-docker build -t passchain/backend:2.0.0 -f backend/Dockerfile backend
-minikube image load passchain/backend:2.0.0
-kubectl apply -f infrastructure/k8s/backend/
-
-# 4. Build and deploy frontend
-cd frontend
-npm install
-npm run build
-docker build -t passchain/frontend:2.0.0 .
-minikube image load passchain/frontend:2.0.0
-kubectl apply -f ../infrastructure/k8s/frontend/
-
-# 5. Port forward services
-kubectl port-forward -n passchain svc/passchain-backend 8080:8080 &
-kubectl port-forward -n passchain svc/passchain-frontend 3000:3000 &
-
-# 6. Access the app
-open http://localhost:3000
+# Or manually
+minikube start --memory=8192 --cpus=4
+kubectl apply -f k8s/namespace.yaml
+helm install passchain-infra k8s/charts/passchain-infra -n passchain
 ```
 
----
+### 2. Port Forward Services
 
-## 🏗️ Architecture
+```powershell
+# Backend
+kubectl port-forward svc/passchain-backend 8080:8080 -n passchain
 
-### Core Components
+# PostgreSQL (optional, for debugging)
+kubectl port-forward svc/passchain-postgres 5432:5432 -n passchain
 
-| Component | Technology | Purpose |
-|-----------|-----------|---------|
-| **Frontend** | Next.js 14 + RainbowKit | Wallet-based auth, client-side encryption |
-| **Backend** | Go (Gin framework) | API coordination, RBAC, audit logging |
-| **Vault** | HashiCorp Vault | Secure storage of encryption key shards |
-| **Database** | PostgreSQL | Encrypted credentials & metadata |
-| **Cache** | Redis | Session management & performance |
-| **Blockchain** | Hyperledger Fabric (future) | Immutable audit logs & key sharding |
-
-### Security Architecture
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    User (Web3 Wallet)                       │
-│                  EIP-191 Signature Auth                     │
-└────────────────────┬────────────────────────────────────────┘
-                     │
-         ┌───────────▼────────────┐
-         │   Frontend (Browser)    │
-         │  Client-Side Encryption │
-         │   XChaCha20-Poly1305    │
-         └───────────┬────────────┘
-                     │
-         ┌───────────▼────────────┐
-         │   Backend API (Go)      │
-         │  • RBAC Enforcement    │
-         │  • Audit Logging       │
-         │  • Shard Management    │
-         └─┬─────────────────┬───┘
-           │                 │
-  ┌────────▼─────┐    ┌─────▼──────────┐
-  │ HashiCorp    │    │  PostgreSQL    │
-  │ Vault (KV)   │    │  (Encrypted)   │
-  │ • Share1     │    │  • Ciphertext  │
-  │ • Audit Logs │    │  • Share2      │
-  └──────────────┘    └────────────────┘
+# Vault (optional)
+kubectl port-forward svc/passchain-vault 8200:8200 -n passchain
 ```
 
-### Encryption Flow
+### 3. Start Frontend
 
-1. **Credential Storage:**
-   - User generates 256-bit DEK (Data Encryption Key)
-   - Splits DEK → Share1 (Vault) + Share2 (DB) + Share3 (Browser localStorage)
-   - Encrypts credential with DEK using XChaCha20-Poly1305
-   - Stores ciphertext + nonce in database
-
-2. **Credential Retrieval:**
-   - Backend fetches Share1 from Vault
-   - Backend returns Share1 + Share2 to authenticated user
-   - Frontend gets Share3 from localStorage
-   - Reconstructs DEK: `Share1 XOR Share2 XOR Share3`
-   - Decrypts credential locally (plaintext never leaves browser)
-
----
-
-## 📂 Project Structure
-
-```
-pass-chain/
-├── backend/              # Go API server
-│   ├── cmd/server/       # Main entry point
-│   ├── internal/
-│   │   ├── api/          # HTTP handlers & routes
-│   │   ├── database/     # GORM models & migrations
-│   │   ├── middleware/   # Auth, logging, CORS
-│   │   ├── models/       # Enterprise domain models
-│   │   └── services/     # Business logic (RBAC, Vault, Fabric)
-│   └── pkg/              # Shared utilities
-├── frontend/             # Next.js 14 app
-│   ├── src/
-│   │   ├── app/          # App router pages
-│   │   ├── components/   # React components (shadcn/ui)
-│   │   ├── contexts/     # React contexts (Org, Auth)
-│   │   └── lib/          # Crypto utils, API client
-├── contracts/            # Solidity smart contracts
-│   ├── contracts/        # ERC-20 token, ERC-721 NFT
-│   ├── scripts/          # Hardhat deployment scripts
-│   └── test/             # Contract tests
-├── blockchain/           # Hyperledger Fabric (future)
-│   └── chaincode/        # Fabric smart contracts
-├── infrastructure/       # Deployment configs
-│   ├── k8s/              # Kubernetes manifests
-│   │   ├── backend/
-│   │   ├── frontend/
-│   │   └── charts/       # Helm charts
-│   └── terraform/        # GKE/AWS provisioning (future)
-└── docs/                 # Documentation
-    ├── ENTERPRISE_SCHEMA.md      # Database schema
-    ├── ENTERPRISE_ROADMAP.md     # Implementation roadmap
-    ├── USER_STORIES.md           # User personas & stories
-    ├── UX_DESIGN_PHILOSOPHY.md   # UI/UX principles
-    └── README.md                 # Docs index
-```
-
----
-
-## 🎯 Features
-
-### ✅ Implemented
-- ✅ Wallet-based authentication (MetaMask, WalletConnect)
-- ✅ Client-side encryption (XChaCha20-Poly1305)
-- ✅ 3-shard encryption key splitting (Vault + DB + Browser)
-- ✅ CRUD operations for credentials
-- ✅ Audit logging (PostgreSQL + Vault backup)
-- ✅ Multi-tenant organizations
-- ✅ Role-Based Access Control (6 default roles)
-- ✅ Personal & organization vaults
-- ✅ Project-scoped credentials
-- ✅ Kubernetes deployment (Minikube/GKE)
-- ✅ Docker containerization
-- ✅ ERC-20 payment token (PassChainToken)
-- ✅ ERC-721 NFT for shard backup
-
-### 🚧 In Progress
-- 🚧 Hyperledger Fabric integration
-- 🚧 2-of-3 Shamir Secret Sharing (proper implementation)
-- 🚧 Key rotation mechanism
-- 🚧 Credential sharing between users
-- 🚧 Team invitations & onboarding
-
-### 🔮 Planned
-- 🔮 Browser extensions (Chrome, Firefox)
-- 🔮 Mobile apps (iOS, Android)
-- 🔮 CLI tool
-- 🔮 Terraform GKE/AWS modules
-- 🔮 Self-hosted enterprise edition
-- 🔮 IPFS integration for shard storage
-- 🔮 Zero-knowledge proof verification
-
----
-
-## 🔐 Security Features
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| **Client-Side Encryption** | ✅ | Plaintext never leaves browser |
-| **Zero-Knowledge Auth** | ✅ | Wallet signatures (EIP-191/SIWE) |
-| **Split-Key Storage** | ✅ | 3 shards across Vault/DB/Browser |
-| **Immutable Audit Logs** | ✅ | PostgreSQL + Vault KV backup |
-| **RBAC** | ✅ | Org-scoped permissions |
-| **Key Rotation** | 🚧 | User-initiated key updates |
-| **Blockchain Anchoring** | 🔮 | Fabric for audit trail |
-| **Hardware Security** | 🔮 | HSM/TPM support |
-
----
-
-## 📖 Documentation
-
-See [`docs/README.md`](./docs/README.md) for:
-- Enterprise architecture & database schema
-- User stories & personas
-- API documentation
-- Deployment guides
-- Security best practices
-
----
-
-## 🛠️ Development
-
-### Backend (Go)
-```bash
-cd backend
-go mod tidy
-go run cmd/server/main.go
-# API: http://localhost:8080
-```
-
-### Frontend (Next.js)
 ```bash
 cd frontend
 npm install
 npm run dev
-# App: http://localhost:3000
 ```
 
-### Smart Contracts (Hardhat)
+Access at **http://localhost:3000**
+
+## 🧪 Testing
+
+### Quick Test
+
 ```bash
-cd contracts
-npm install
-npx hardhat compile
-npx hardhat test
-npx hardhat run scripts/deploy-local.js --network localhost
+# Using Makefile (recommended)
+make test-all
+
+# Or manually
+docker-compose -f docker-compose.test.yml up -d
+cd backend && go test ./... -v
 ```
 
----
+### Test Types
 
-## 🚀 Deployment
-
-### Minikube (Local)
 ```bash
-cd infrastructure/k8s
-./scripts/deploy-minikube.sh
+# Unit tests (fast, no infrastructure)
+make test-unit
+# or: cd backend && go test ./internal/... -v -short
+
+# Integration tests (DB + Vault + Redis)
+make test-integration
+# or: go test ./test -v -run TestIntegration
+
+# E2E flow tests (complete user journeys)
+make test-e2e
+# or: go test ./test -v -run TestEndToEndFlow
+
+# Coverage report
+make test-coverage
+# Opens HTML report in browser
 ```
 
-### GKE (Production - Future)
+### Smoke Test (against running backend)
+
 ```bash
-cd infrastructure/terraform/gke
+make smoke
+# or: cd backend && go run cmd/smoke_test/main.go
+```
+
+### CI/CD
+
+Tests run automatically on every push and PR:
+- ✅ Unit tests with race detector
+- ✅ Integration tests
+- ✅ E2E flow tests
+- ✅ Linting (golangci-lint)
+- ✅ Security scanning (Trivy)
+- ✅ Coverage reporting (Codecov)
+
+See [`.github/workflows/test.yml`](.github/workflows/test.yml)
+
+## 🏗️ Architecture
+
+```
+User (Web3 Wallet)
+    ↓ Sign request
+Frontend (Next.js + Web3)
+    ↓ Encrypted payload
+Backend API (Go + Gin)
+    ├─→ PostgreSQL (metadata + encrypted credentials)
+    ├─→ HashiCorp Vault (Share1 + audit backup)
+    ├─→ Hyperledger Fabric (Share2 + immutable logs)
+    └─→ Redis (cache)
+```
+
+### Data Flow
+
+1. **Credential Storage**
+   - Client generates random DEK (Data Encryption Key)
+   - Client encrypts credential with DEK using XChaCha20-Poly1305
+   - DEK split into 3 shares via Shamir Secret Sharing (2-of-3)
+     - Share1 → HashiCorp Vault
+     - Share2 → Hyperledger Fabric PDC
+     - Share3 → User's browser localStorage (backup)
+   - Encrypted credential → PostgreSQL
+   - Audit log → Database + Vault + Fabric
+
+2. **Credential Retrieval**
+   - User signs access request with wallet
+   - Backend validates signature
+   - Backend retrieves Share1 (Vault) + Share2 (Fabric)
+   - Client reconstructs DEK from shares
+   - Client decrypts credential locally
+   - Access logged to blockchain
+
+## 📚 Tech Stack
+
+| Layer | Technology | Purpose |
+|-------|-----------|---------|
+| Frontend | React + Next.js 14 + TypeScript | UI framework |
+| Web3 | RainbowKit + Wagmi + viem | Wallet connection |
+| UI Library | shadcn/ui + Tailwind CSS | Components & styling |
+| Backend | Go 1.23 + Gin + GORM | API server |
+| Database | PostgreSQL 15 | Metadata & encrypted data |
+| Cache | Redis 7 | Session & query cache |
+| Secrets | HashiCorp Vault | Key storage (Share1) |
+| Blockchain | Hyperledger Fabric 2.5 | Immutable audit logs (Share2) |
+| Orchestration | Kubernetes + Helm | Container management |
+| IaC | Terraform | Cloud infrastructure |
+| CI/CD | GitHub Actions | Testing & deployment |
+| Monitoring | Prometheus + Grafana | Metrics & alerts |
+
+## 📁 Project Structure
+
+```
+pass-chain/
+├── backend/                  # Go backend
+│   ├── cmd/
+│   │   ├── server/          # Main API server
+│   │   └── smoke_test/      # Smoke test binary
+│   ├── internal/
+│   │   ├── api/             # Gin routes & handlers
+│   │   │   ├── handlers/    # Request handlers
+│   │   │   ├── middleware/  # Auth, CORS, logging
+│   │   │   └── router.go    # Route definitions
+│   │   ├── database/        # GORM models & migrations
+│   │   ├── models/          # Data models
+│   │   └── services/        # Business logic (RBAC, Org, Vault, Fabric)
+│   ├── test/                # Integration & E2E tests
+│   └── pkg/                 # Shared utilities
+├── frontend/                # Next.js frontend
+│   ├── src/
+│   │   ├── app/            # App router pages
+│   │   ├── components/     # React components
+│   │   ├── lib/            # Utils, API client, crypto
+│   │   └── hooks/          # Custom React hooks
+│   └── public/             # Static assets
+├── k8s/                    # Kubernetes manifests
+│   ├── charts/             # Helm charts
+│   │   ├── passchain-infra/  # PostgreSQL, Redis, Vault
+│   │   └── passchain-app/    # Backend, Frontend
+│   └── *.yaml              # Base manifests
+├── blockchain/             # Hyperledger Fabric
+│   ├── chaincode/          # Smart contracts (Go)
+│   ├── network/            # Fabric network config
+│   └── scripts/            # Setup scripts
+├── contracts/              # Solidity (ERC-20 token, NFT backup)
+│   ├── src/
+│   ├── test/
+│   └── scripts/            # Deployment scripts
+├── docs/                   # Documentation
+│   ├── ENTERPRISE_SCHEMA.md
+│   ├── ENTERPRISE_ROADMAP.md
+│   ├── USER_STORIES.md
+│   └── README.md
+├── scripts/                # Helper scripts
+│   ├── run-tests.ps1
+│   └── run-tests.sh
+├── .github/workflows/      # CI/CD pipelines
+├── docker-compose.yml      # Local dev environment
+├── docker-compose.test.yml # Test environment
+└── Makefile               # Test & build commands
+```
+
+## 🛠️ Development
+
+### Local Development (Docker Compose)
+
+```bash
+# Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f backend
+
+# Rebuild after changes
+docker-compose up -d --build backend
+```
+
+### Database Migrations
+
+Migrations run automatically on backend startup. To run manually:
+
+```bash
+cd backend
+go run cmd/server/main.go migrate
+```
+
+### Linting
+
+```bash
+# Backend
+cd backend
+golangci-lint run
+
+# Frontend
+cd frontend
+npm run lint
+```
+
+### Building
+
+```bash
+# Backend binary
+cd backend
+go build -o bin/server cmd/server/main.go
+
+# Frontend production
+cd frontend
+npm run build
+npm start
+```
+
+## 🔐 Security
+
+- **Client-side encryption**: All credentials encrypted before leaving browser
+- **Split-key architecture**: No single point can decrypt data
+- **Wallet signatures**: Every action signed by user's wallet
+- **Audit trail**: Immutable blockchain logs
+- **RBAC**: Granular permission system
+- **Vault integration**: Enterprise-grade secret storage
+- **Security scanning**: Trivy scans in CI/CD
+- **Dependency auditing**: Automatic vulnerability scanning
+
+## 📖 Documentation
+
+- [Enterprise Schema](docs/ENTERPRISE_SCHEMA.md) - Database design
+- [Implementation Plan](IMPLEMENTATION_PLAN.md) - Development roadmap
+- [User Stories](docs/USER_STORIES.md) - Feature scenarios
+- [Testing Guide](backend/test/README.md) - How to run tests
+- [API Documentation](docs/API.md) - API endpoints (Swagger)
+- [Product Documentation](pass-chain-product-documentation.md) - Why we built this
+
+## 🚢 Deployment
+
+### GKE (Google Kubernetes Engine)
+
+```bash
+# Apply Terraform
+cd terraform/gke
 terraform init
 terraform apply
-# Then apply Kubernetes manifests
+
+# Deploy with Helm
+helm upgrade --install passchain k8s/charts/passchain-app \
+  --namespace passchain \
+  --set image.tag=v1.0.0
 ```
 
----
+See [`.github/workflows/deploy-gke.yml`](.github/workflows/deploy-gke.yml)
 
 ## 🤝 Contributing
 
-We're not accepting external contributions yet, but star the repo to stay updated!
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing`)
+5. Open Pull Request
+
+**Note**: All PRs must pass tests and linting before merge.
+
+## 📝 License
+
+MIT License - see [LICENSE](LICENSE)
+
+## 🎯 Roadmap
+
+- [x] Core password management
+- [x] Wallet authentication
+- [x] Split-key architecture (Vault + DB)
+- [x] Enterprise organizations & RBAC
+- [x] Project-based vaults
+- [x] Audit logs (DB + Vault)
+- [ ] Hyperledger Fabric integration (Share2 + blockchain logs)
+- [ ] ERC-20 payment token
+- [ ] ERC-721 NFT shard backup (IPFS)
+- [ ] Mobile app (React Native)
+- [ ] Browser extension
+- [ ] Hardware wallet support (Ledger, Trezor)
+- [ ] Self-hosted option
+- [ ] SSO integration (SAML, OAuth)
+
+## 💬 Support
+
+- GitHub Issues: [Report bugs or request features](https://github.com/yourusername/pass-chain/issues)
+- Documentation: [Read the docs](docs/)
+- Discord: [Join our community](#)
 
 ---
 
-## 📄 License
-
-[MIT License](./LICENSE)
-
----
-
-## 🔗 Links
-
-- **Documentation**: [./docs](./docs)
-- **Implementation Plan**: [IMPLEMENTATION_PLAN.md](./IMPLEMENTATION_PLAN.md)
-- **Product Docs**: [./docs/product](./docs/product)
-
----
-
-**Built with ❤️ using Web3, Go, React, and a lot of coffee ☕**
-
-**AUUUUFFFF!** 🔥
+**AUUUUFFFF! 🔥**

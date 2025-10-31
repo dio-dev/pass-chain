@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"pass-chain/backend/internal/models"
 	"gorm.io/gorm"
 )
@@ -28,9 +29,15 @@ func NewOrganizationService(db *gorm.DB, rbacService *RBACService) *Organization
 
 // CreateOrganization creates a new organization with default roles and the creator as Owner
 func (s *OrganizationService) CreateOrganization(ctx context.Context, name string, creatorUserID string) (*models.Organization, error) {
+	// Validate creatorUserID
+	if creatorUserID == "" {
+		return nil, fmt.Errorf("creatorUserID cannot be empty")
+	}
+
 	slug := generateSlug(name)
 
 	org := models.Organization{
+		ID:         uuid.New().String(), // Explicitly generate UUID
 		Name:       name,
 		Slug:       slug,
 		Plan:       "free",
@@ -45,20 +52,26 @@ func (s *OrganizationService) CreateOrganization(ctx context.Context, name strin
 			return fmt.Errorf("failed to create organization: %w", err)
 		}
 
-		// Initialize default roles
-		if err := s.rbacService.InitializeOrgRoles(ctx, org.ID); err != nil {
+		// Initialize default roles (using transaction)
+		if err := s.rbacService.InitializeOrgRolesWithTx(ctx, tx, org.ID); err != nil {
 			return fmt.Errorf("failed to initialize roles: %w", err)
 		}
 
-		// Get Owner role
-		ownerRole, err := s.rbacService.GetRoleByName(ctx, org.ID, "Owner")
-		if err != nil {
+		// Get Owner role (using transaction)
+		var ownerRole models.Role
+		if err := tx.Where("org_id = ? AND name = ?", org.ID, "Owner").First(&ownerRole).Error; err != nil {
 			return fmt.Errorf("failed to get owner role: %w", err)
+		}
+
+		// Validate IDs before creating member
+		if ownerRole.ID == "" {
+			return fmt.Errorf("owner role ID is empty")
 		}
 
 		// Add creator as Owner
 		now := time.Now()
 		member := models.OrganizationMember{
+			ID:       uuid.New().String(), // Explicitly generate UUID
 			OrgID:    org.ID,
 			UserID:   creatorUserID,
 			RoleID:   ownerRole.ID,
@@ -66,16 +79,18 @@ func (s *OrganizationService) CreateOrganization(ctx context.Context, name strin
 			JoinedAt: &now,
 		}
 		if err := tx.Create(&member).Error; err != nil {
-			return fmt.Errorf("failed to add creator as member: %w", err)
+			return fmt.Errorf("failed to add creator as member (orgID=%s, userID=%s, roleID=%s): %w", 
+				org.ID, creatorUserID, ownerRole.ID, err)
 		}
 
 		// Create default organization vault
 		vault := models.Vault{
-			OrgID:     &org.ID,
-			VaultType: "org",
-			Name:      "Default Vault",
+			ID:          uuid.New().String(), // Explicitly generate UUID
+			OrgID:       &org.ID,
+			VaultType:   "org",
+			Name:        "Default Vault",
 			Description: "Default organization vault for shared credentials",
-			CreatedBy: creatorUserID,
+			CreatedBy:   creatorUserID,
 		}
 		if err := tx.Create(&vault).Error; err != nil {
 			return fmt.Errorf("failed to create default vault: %w", err)

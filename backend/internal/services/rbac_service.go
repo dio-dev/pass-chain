@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/google/uuid"
 	"pass-chain/backend/internal/models"
 	"gorm.io/gorm"
 )
@@ -127,28 +128,35 @@ func GetDefaultRoles() []DefaultRole {
 
 // InitializeOrgRoles creates default roles for a new organization
 func (s *RBACService) InitializeOrgRoles(ctx context.Context, orgID string) error {
+	return s.InitializeOrgRolesWithTx(ctx, s.db, orgID)
+}
+
+// InitializeOrgRolesWithTx creates default roles with a transaction
+func (s *RBACService) InitializeOrgRolesWithTx(ctx context.Context, tx *gorm.DB, orgID string) error {
 	defaultRoles := GetDefaultRoles()
 
 	for _, dr := range defaultRoles {
 		// Create role
 		role := models.Role{
+			ID:          uuid.New().String(), // Explicitly generate UUID
 			OrgID:       orgID,
 			Name:        dr.Name,
 			Description: dr.Description,
 			IsSystem:    true,
 		}
-		if err := s.db.WithContext(ctx).Create(&role).Error; err != nil {
+		if err := tx.WithContext(ctx).Create(&role).Error; err != nil {
 			return fmt.Errorf("failed to create role %s: %w", dr.Name, err)
 		}
 
 		// Create permissions
 		for _, perm := range dr.Permissions {
 			permission := models.Permission{
+				ID:           uuid.New().String(), // Explicitly generate UUID
 				RoleID:       role.ID,
 				ResourceType: perm.ResourceType,
 				Action:       perm.Action,
 			}
-			if err := s.db.WithContext(ctx).Create(&permission).Error; err != nil {
+			if err := tx.WithContext(ctx).Create(&permission).Error; err != nil {
 				return fmt.Errorf("failed to create permission for role %s: %w", dr.Name, err)
 			}
 		}

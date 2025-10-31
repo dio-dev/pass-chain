@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: passchain-test-db
+    environment:
+      POSTGRES_DB: passchain_test
+      POSTGRES_USER: passchain
+      POSTGRES_PASSWORD: passchain123
+    ports:
+      - "5433:5432"
+    volumes:
+      - test-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U passchain"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis-test:
+    image: redis:7-alpine
+    container_name: passchain-test-redis
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  vault-test:
+    image: hashicorp/vault:latest
+    container_name: passchain-test-vault
+    ports:
+      - "8201:8200"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: test-token
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  test-postgres-data:
+

@@ -9,6 +9,7 @@ require (
 	github.com/hyperledger/fabric-sdk-go v1.0.0
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
+	github.com/stretchr/testify v1.11.1
 	go.uber.org/zap v1.26.0
 	gorm.io/driver/postgres v1.5.4
 	gorm.io/gorm v1.25.5
@@ -80,7 +81,6 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.1.1 // indirect
-	github.com/stretchr/testify v1.9.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	github.com/weppos/publicsuffix-go v0.5.0 // indirect

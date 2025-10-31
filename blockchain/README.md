@@ -1,3 +1,7 @@
+---
+hidden: true
+---
+
 # Blockchain - Hyperledger Fabric Network
 
 Hyperledger Fabric blockchain network for Pass Chain.
@@ -24,29 +28,29 @@ Blockchain Network
 
 Located in `chaincode/credentials/`:
 
-- **CredentialShard** - Stores encrypted credential shards
-- **AccessLog** - Immutable access logs
-- **Functions**:
-  - `CreateCredentialShard` - Store a credential shard
-  - `ReadCredentialShard` - Retrieve a credential shard
-  - `DeleteCredentialShard` - Delete a credential
-  - `LogAccess` - Log credential access
-  - `GetAccessLogs` - Query access logs
+* **CredentialShard** - Stores encrypted credential shards
+* **AccessLog** - Immutable access logs
+* **Functions**:
+  * `CreateCredentialShard` - Store a credential shard
+  * `ReadCredentialShard` - Retrieve a credential shard
+  * `DeleteCredentialShard` - Delete a credential
+  * `LogAccess` - Log credential access
+  * `GetAccessLogs` - Query access logs
 
 ### Network Configuration
 
-- **Organizations**: 1-2 peer organizations + orderer organization
-- **Peers**: 2 per organization for redundancy
-- **Orderer**: Raft consensus (3 orderers)
-- **Channel**: Private channel for Pass Chain
-- **State Database**: CouchDB for rich queries
+* **Organizations**: 1-2 peer organizations + orderer organization
+* **Peers**: 2 per organization for redundancy
+* **Orderer**: Raft consensus (3 orderers)
+* **Channel**: Private channel for Pass Chain
+* **State Database**: CouchDB for rich queries
 
 ## Prerequisites
 
-- Docker 24+
-- Docker Compose
-- Hyperledger Fabric binaries 2.5+
-- Go 1.21+ (for chaincode development)
+* Docker 24+
+* Docker Compose
+* Hyperledger Fabric binaries 2.5+
+* Go 1.21+ (for chaincode development)
 
 ## Getting Started
 
@@ -64,10 +68,11 @@ cd blockchain
 ```
 
 This will:
-- Generate crypto material
-- Start all containers
-- Create the channel
-- Join peers to channel
+
+* Generate crypto material
+* Start all containers
+* Create the channel
+* Join peers to channel
 
 ### 3. Deploy Chaincode
 
@@ -220,11 +225,11 @@ docker logs dev-peer0.org1.example.com-credentials_1.0
 
 ## Security
 
-- **Private Channel**: Only authorized organizations can join
-- **Identity Management**: Fabric CA for certificate issuance
-- **Access Control**: Chaincode-level ACLs
-- **Encryption**: Data encrypted before storing on chain
-- **Audit Trail**: Immutable transaction history
+* **Private Channel**: Only authorized organizations can join
+* **Identity Management**: Fabric CA for certificate issuance
+* **Access Control**: Chaincode-level ACLs
+* **Encryption**: Data encrypted before storing on chain
+* **Audit Trail**: Immutable transaction history
 
 ## Backup & Recovery
 
@@ -266,16 +271,16 @@ docker logs $(docker ps -q -f name=dev-peer0.org1)
 
 ### Connection issues
 
-- Check Docker network: `docker network inspect fabric_test`
-- Verify all containers running: `docker ps`
-- Check peer connectivity: `docker exec peer0.org1.example.com peer channel list`
+* Check Docker network: `docker network inspect fabric_test`
+* Verify all containers running: `docker ps`
+* Check peer connectivity: `docker exec peer0.org1.example.com peer channel list`
 
 ## Performance Tuning
 
-- **Block Size**: Adjust in `configtx.yaml`
-- **Batch Timeout**: Configure orderer timeout
-- **CouchDB Indexes**: Create indexes for common queries
-- **Connection Pooling**: Use SDK connection pools
+* **Block Size**: Adjust in `configtx.yaml`
+* **Batch Timeout**: Configure orderer timeout
+* **CouchDB Indexes**: Create indexes for common queries
+* **Connection Pooling**: Use SDK connection pools
 
 ## Production Deployment
 
@@ -284,7 +289,3 @@ See `../infrastructure/k8s/blockchain/` for Kubernetes deployment.
 ## License
 
 MIT
-
-
-
-
