@@ -28,6 +28,16 @@ export interface Credential {
   lastAccessed?: string;
 }
 
+export interface AuditLog {
+  id: string;
+  credentialId: string;
+  credentialName: string;
+  action: 'create' | 'read' | 'delete';
+  timestamp: string;
+  txHash?: string;
+  ipHash?: string;
+}
+
 export interface RetrieveCredentialResponse extends Credential {
   share1: string; // Retrieved from Vault
   share2: string; // Retrieved from Blockchain
@@ -132,3 +142,37 @@ export async function healthCheck(): Promise<{ status: string; service: string }
   return response.json();
 }
 
+/**
+ * Get audit logs for a wallet
+ */
+export async function getAuditLogs(walletAddress: string): Promise<{logs: AuditLog[], count: number}> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/audit-logs?wallet=${walletAddress}`, {
+    headers: {
+      'X-Wallet-Address': walletAddress,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch audit logs');
+  }
+
+  return response.json();
+}
+
+/**
+ * Get credential-specific audit logs
+ */
+export async function getCredentialAuditLogs(credentialId: string, walletAddress: string): Promise<AuditLog[]> {
+  const response = await fetch(`${API_BASE_URL}/api/v1/credentials/${credentialId}/audit`, {
+    headers: {
+      'X-Wallet-Address': walletAddress,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to fetch audit logs');
+  }
+
+  const data = await response.json();
+  return data.logs || [];
+}

@@ -1,0 +1,14 @@
+.env
+out/
+cache/
+broadcast/
+deployments/*.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+

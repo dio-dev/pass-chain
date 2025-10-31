@@ -55,25 +55,101 @@ func NewRouter(cfg *config.Config, db *database.Database, log *logger.Logger) *g
 		log.Info("✅ Fabric client initialized - blockchain integration active!")
 	}
 
+	// Initialize enterprise services
+	rbacService := services.NewRBACService(db.DB)
+	orgService := services.NewOrganizationService(db.DB, rbacService)
+
 	// Initialize handlers
 	credHandler := handlers.NewCredentialHandler(db, vaultService, fabricClient, log)
 	auditHandler := handlers.NewAuditHandler(db, log)
+	
+	// Enterprise handlers
+	userHandler := handlers.NewUserHandler(db.DB, orgService, rbacService)
+	orgHandler := handlers.NewOrganizationHandler(db.DB, orgService, rbacService)
+	memberHandler := handlers.NewMemberHandler(db.DB, orgService, rbacService)
+	projectHandler := handlers.NewProjectHandler(db.DB, orgService, rbacService)
+	vaultHandler := handlers.NewVaultHandler(db.DB, rbacService)
 
 	// API v1 routes
 	v1 := router.Group("/api/v1")
 	{
-		// Credentials
-		credentials := v1.Group("/credentials")
+		// User/Profile routes
+		v1.GET("/me", middleware.AuthRequired(), userHandler.GetMe)
+		v1.PUT("/me", middleware.AuthRequired(), userHandler.UpdateMe)
+		v1.GET("/me/organizations", middleware.AuthRequired(), userHandler.GetMyOrganizations)
+		v1.GET("/me/permissions", middleware.AuthRequired(), userHandler.GetMyPermissions)
+
+		// Organizations
+		orgs := v1.Group("/organizations", middleware.AuthRequired())
 		{
-			credentials.POST("", credHandler.CreateCredential)
-			credentials.GET("", credHandler.GetCredentials)
-			credentials.GET("/:id", credHandler.GetCredentialByID)
-			credentials.DELETE("/:id", credHandler.DeleteCredential)
+			orgs.POST("", orgHandler.CreateOrganization)
+			orgs.GET("", orgHandler.ListOrganizations)
+			orgs.GET("/:id", orgHandler.GetOrganization)
+			orgs.PUT("/:id", orgHandler.UpdateOrganization)
+			orgs.DELETE("/:id", orgHandler.DeleteOrganization)
+
+			// Organization members
+			orgs.GET("/:id/members", memberHandler.ListMembers)
+			orgs.POST("/:id/invite", memberHandler.InviteMember)
+			orgs.PUT("/:id/members/:userId/role", memberHandler.UpdateMemberRole)
+			orgs.DELETE("/:id/members/:userId", memberHandler.RemoveMember)
+
+			// Organization projects
+			orgs.POST("/:id/projects", projectHandler.CreateProject)
+			orgs.GET("/:id/projects", projectHandler.ListProjects)
+
+			// Organization audit
+			orgs.GET("/:id/audit", auditHandler.GetAuditLogs) // Will be enhanced
 		}
 
+		// Invitations (public routes - no auth middleware)
+		invitations := v1.Group("/invitations")
+		{
+			invitations.GET("/:token", memberHandler.PreviewInvitation)
+			invitations.POST("/:token/accept", middleware.AuthRequired(), memberHandler.AcceptInvitation)
+		}
+
+		// Projects
+		projects := v1.Group("/projects", middleware.AuthRequired())
+		{
+			projects.GET("/:id", projectHandler.GetProject)
+			projects.PUT("/:id", projectHandler.UpdateProject)
+			projects.DELETE("/:id", projectHandler.DeleteProject)
+		}
+
+		// Vaults
+		vaults := v1.Group("/vaults", middleware.AuthRequired())
+		{
+			vaults.POST("", vaultHandler.CreateVault)
+			vaults.GET("", vaultHandler.ListVaults)
+			vaults.GET("/:id", vaultHandler.GetVault)
+			vaults.PUT("/:id", vaultHandler.UpdateVault)
+			vaults.DELETE("/:id", vaultHandler.DeleteVault)
+
+			// Vault access control
+			vaults.POST("/:id/access", vaultHandler.GrantVaultAccess)
+			vaults.DELETE("/:id/access/:userId", vaultHandler.RevokeVaultAccess)
+
+			// Vault audit (will be enhanced)
+			vaults.GET("/:id/audit", auditHandler.GetAuditLogs)
+		}
+
+	// Credentials (updated for vault-scoping)
+	credentials := v1.Group("/credentials", middleware.AuthRequired())
+	{
+		credentials.POST("", credHandler.CreateCredential)
+		credentials.GET("", credHandler.GetCredentials)
+		credentials.GET("/:id", credHandler.GetCredentialByID)
+		credentials.POST("/:id/recover", credHandler.RecoverCredential) // Recovery endpoint with Share3
+		credentials.DELETE("/:id", credHandler.DeleteCredential)
+		
+		// Credential-specific audit logs
+		credentials.GET("/:id/audit", auditHandler.GetCredentialAuditLogs)
+	}
+
 		// Audit logs & blockchain explorer
-		v1.GET("/audit-logs", auditHandler.GetAuditLogs)
-		v1.GET("/stats", auditHandler.GetStats)
+		v1.GET("/audit-logs", middleware.AuthRequired(), auditHandler.GetAuditLogs)
+		v1.GET("/stats", middleware.AuthRequired(), auditHandler.GetStats)
 	}
 
 	return router

@@ -93,20 +93,38 @@ export function splitSecret(secret: Uint8Array): {
 
 /**
  * Reconstruct secret from any 2 of 3 shares
+ * Shares can be optional - need at least 2 to reconstruct
  */
 export function reconstructSecret(
-  share1: string,
-  share2: string,
-  share3: string
+  share1?: string,
+  share2?: string,
+  share3?: string
 ): Uint8Array {
-  const s1 = base64ToBuffer(share1);
-  const s2 = base64ToBuffer(share2);
-  const s3 = base64ToBuffer(share3);
+  // Filter out undefined/empty shares
+  const availableShares = [
+    share1 ? { value: share1, index: 0 } : null,
+    share2 ? { value: share2, index: 1 } : null,
+    share3 ? { value: share3, index: 2 } : null,
+  ].filter(Boolean) as { value: string; index: number }[];
   
-  // Reconstruct using XOR
+  if (availableShares.length < 2) {
+    throw new Error('Need at least 2 of 3 shares to reconstruct secret');
+  }
+  
+  // Use first 2 available shares
+  const s1 = base64ToBuffer(availableShares[0].value);
+  const s2 = base64ToBuffer(availableShares[1].value);
+  
+  // Reconstruct using XOR of 2 shares
   const secret = new Uint8Array(32);
   for (let i = 0; i < 32; i++) {
-    secret[i] = s1[i] ^ s2[i] ^ s3[i];
+    secret[i] = s1[i] ^ s2[i];
+    
+    // If we have a third share, XOR it in as well
+    if (availableShares.length === 3) {
+      const s3 = base64ToBuffer(availableShares[2].value);
+      secret[i] ^= s3[i];
+    }
   }
   
   return secret;

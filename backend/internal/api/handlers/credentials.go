@@ -1,9 +1,13 @@
 package handlers
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"pass-chain/backend/internal/database"
 	"pass-chain/backend/internal/models"
 	"pass-chain/backend/internal/services"
@@ -44,6 +48,39 @@ func (h *CredentialHandler) CreateCredential(c *gin.Context) {
 	// For now, just log it
 	h.logger.Info("Creating credential", "wallet", req.WalletAddress, "signature", req.Signature[:20]+"...")
 
+	// Find or create user and personal vault for backward compatibility
+	var user models.User
+	if err := h.db.Where("wallet_address = ?", req.WalletAddress).FirstOrCreate(&user, models.User{
+		WalletAddress: req.WalletAddress,
+	}).Error; err != nil {
+		h.logger.Error("Failed to find/create user", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user"})
+		return
+	}
+
+	h.logger.Info("User found/created", "userId", user.ID, "wallet", user.WalletAddress)
+
+	// Find or create personal vault
+	var vault models.Vault
+	if err := h.db.Where("owner_user_id = ? AND vault_type = ?", user.ID, "personal").FirstOrCreate(&vault, models.Vault{
+		OwnerUserID: &user.ID,
+		VaultType:   "personal",
+		Name:        "Personal Vault",
+		CreatedBy:   user.ID,
+	}).Error; err != nil {
+		h.logger.Error("Failed to find/create vault", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create vault"})
+		return
+	}
+
+	h.logger.Info("Vault found/created", "vaultId", vault.ID, "userId", user.ID)
+
+	if vault.ID == "" {
+		h.logger.Error("Vault ID is empty after FirstOrCreate")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create vault - ID empty"})
+		return
+	}
+
 	// Store Share1 in Vault
 	// Vault KV v2 path format: secret/data/<path>
 	vaultPath := "secret/data/passchain/" + req.WalletAddress + "/" + req.Name
@@ -75,6 +112,8 @@ func (h *CredentialHandler) CreateCredential(c *gin.Context) {
 
 	// Store credential in database
 	credential := &models.Credential{
+		ID:             uuid.New().String(),
+		VaultID:        vault.ID,
 		CredentialName: req.Name,
 		Username:       req.Username,
 		URL:            req.URL,
@@ -84,6 +123,7 @@ func (h *CredentialHandler) CreateCredential(c *gin.Context) {
 		VaultPath:      vaultPath,
 		BlockchainTxID: txID,
 		Share2:         req.Share2, // Fallback storage in DB
+		CreatedBy:      user.ID,
 	}
 
 	if err := h.db.Create(credential).Error; err != nil {
@@ -92,15 +132,32 @@ func (h *CredentialHandler) CreateCredential(c *gin.Context) {
 		return
 	}
 
-	// Log to Fabric blockchain
+	// Log audit to database
+	auditLog := &models.AuditLog{
+		CredentialID:  credential.ID,
+		WalletAddress: req.WalletAddress,
+		Action:        "create",
+		IPAddress:     hashIP(c.ClientIP()),
+		Timestamp:     time.Now(),
+		ResourceType:  "credential",
+		Metadata:      "{}",
+	}
+	
+	// Log to Fabric blockchain (optional)
 	if h.fabric != nil {
 		auditTxID, err := h.fabric.LogAccess(req.WalletAddress, credential.ID, "create", c.ClientIP())
 		if err != nil {
 			h.logger.Error("Failed to log to Fabric", "error", err)
-			// Don't fail - audit logging is optional
 		} else {
+			auditLog.TxHash = auditTxID
 			h.logger.Info("Audit logged to Fabric", "auditTxID", auditTxID)
 		}
+	}
+	
+	// Save audit log to database
+	if err := h.db.Create(auditLog).Error; err != nil {
+		h.logger.Error("Failed to save audit log", "error", err)
+		// Don't fail - audit logging shouldn't break the operation
 	}
 
 	h.logger.Info("Credential created", "id", credential.ID, "name", credential.CredentialName, "txID", txID)
@@ -168,16 +225,34 @@ func (h *CredentialHandler) GetCredentialByID(c *gin.Context) {
 	}
 
 	// Update last accessed
-	h.db.Model(&credential).Update("last_accessed", "now()")
+	now := time.Now()
+	h.db.Model(&credential).Update("last_accessed", now)
 
-	// Log access to Fabric
+	// Log audit to database
+	auditLog := &models.AuditLog{
+		CredentialID:  id,
+		WalletAddress: walletAddress,
+		Action:        "read",
+		IPAddress:     hashIP(c.ClientIP()),
+		Timestamp:     now,
+		ResourceType:  "credential",
+		Metadata:      "{}",
+	}
+	
+	// Log access to Fabric (optional)
 	if h.fabric != nil {
 		auditTxID, err := h.fabric.LogAccess(walletAddress, id, "read", c.ClientIP())
 		if err != nil {
 			h.logger.Error("Failed to log access to Fabric", "error", err)
 		} else {
+			auditLog.TxHash = auditTxID
 			h.logger.Info("Access logged to Fabric", "auditTxID", auditTxID)
 		}
+	}
+	
+	// Save audit log to database
+	if err := h.db.Create(auditLog).Error; err != nil {
+		h.logger.Error("Failed to save audit log", "error", err)
 	}
 
 	h.logger.Info("Credential accessed", "id", id, "wallet", walletAddress)
@@ -194,6 +269,58 @@ func (h *CredentialHandler) GetCredentialByID(c *gin.Context) {
 		"lastAccessed":  credential.LastAccessed,
 		"share1":        share1,
 		"share2":        credential.Share2, // From blockchain (future)
+		"share3":        "client_backup", // Client should provide from localStorage backup
+	})
+}
+
+// RecoverCredential handles POST /api/v1/credentials/:id/recover with Share3
+func (h *CredentialHandler) RecoverCredential(c *gin.Context) {
+	id := c.Param("id")
+	walletAddress := c.GetHeader("X-Wallet-Address")
+
+	if walletAddress == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Wallet authentication required"})
+		return
+	}
+
+	var req struct {
+		Share3 string `json:"share3" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Share3 required"})
+		return
+	}
+
+	var credential models.Credential
+	if err := h.db.Where("id = ? AND wallet_address = ?", id, walletAddress).First(&credential).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Credential not found"})
+		return
+	}
+
+	// Retrieve Share1 from Vault
+	vaultData, err := h.vault.ReadSecret(credential.VaultPath)
+	if err != nil {
+		h.logger.Error("Failed to read from Vault", "error", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve encryption key"})
+		return
+	}
+
+	share1, ok := vaultData["share1"].(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid vault data"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"id":            credential.ID,
+		"name":          credential.CredentialName,
+		"username":      credential.Username,
+		"url":           credential.URL,
+		"encryptedData": credential.EncryptedData,
+		"nonce":         credential.Nonce,
+		"share1":        share1,
+		"share2":        credential.Share2,
+		"share3":        req.Share3, // User-provided Share3
 	})
 }
 
@@ -226,8 +353,25 @@ func (h *CredentialHandler) DeleteCredential(c *gin.Context) {
 		return
 	}
 
+	// Log audit to database
+	auditLog := &models.AuditLog{
+		CredentialID:  id,
+		WalletAddress: walletAddress,
+		Action:        "delete",
+		IPAddress:     hashIP(c.ClientIP()),
+		Timestamp:     time.Now(),
+		ResourceType:  "credential",
+		Metadata:      "{}",
+	}
+	h.db.Create(auditLog)
+
 	h.logger.Info("Credential deleted", "id", id, "wallet", walletAddress)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Credential deleted successfully"})
 }
 
+// hashIP creates a SHA-256 hash of the IP address for privacy
+func hashIP(ip string) string {
+	hash := sha256.Sum256([]byte(ip))
+	return hex.EncodeToString(hash[:])
+}

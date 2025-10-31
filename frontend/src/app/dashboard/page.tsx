@@ -19,7 +19,9 @@ import {
   getCredentials,
   getCredentialById,
   deleteCredential,
+  getCredentialAuditLogs,
   type Credential,
+  type AuditLog,
 } from '@/lib/api';
 import { toast } from 'sonner';
 
@@ -35,6 +37,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [revealedPasswords, setRevealedPasswords] = useState<Set<string>>(new Set());
+  const [historyModal, setHistoryModal] = useState<{id: string, name: string} | null>(null);
 
   // Load credentials on mount
   useEffect(() => {
@@ -82,19 +85,16 @@ export default function DashboardPage() {
         const credentialData = await getCredentialById(id, address, signature);
         
         // Get user's backup share from localStorage
+        // Try to get Share3 from localStorage (optional backup)
         const backupShares = JSON.parse(localStorage.getItem('pass-chain-backups') || '{}');
         const share3 = backupShares[id];
         
-        if (!share3) {
-          toast.error('Backup key not found! Cannot decrypt.');
-          return;
-        }
-        
-        // Reconstruct encryption key from shares
+        // Reconstruct encryption key from available shares (need at least 2 of 3)
+        // Share1 from Vault, Share2 from Database/Blockchain, Share3 from localStorage (optional)
         const reconstructedKey = reconstructSecret(
           credentialData.share1,
           credentialData.share2,
-          share3
+          share3 // Optional - works without it
         );
         
         // Decrypt the password
@@ -240,6 +240,7 @@ export default function DashboardPage() {
                 isRevealed={revealedPasswords.has(cred.id)}
                 onToggleReveal={() => togglePasswordVisibility(cred.id)}
                 onDelete={() => handleDeleteCredential(cred.id, cred.name)}
+                onHistoryClick={(cred) => setHistoryModal({id: cred.id, name: cred.name})}
               />
             ))}
           </div>
@@ -269,6 +270,16 @@ export default function DashboardPage() {
           onSuccess={loadCredentials}
         />
       )}
+
+      {/* Access History Modal */}
+      {historyModal && (
+        <AccessHistoryModal
+          credentialId={historyModal.id}
+          credentialName={historyModal.name}
+          walletAddress={address!}
+          onClose={() => setHistoryModal(null)}
+        />
+      )}
     </div>
   );
 }
@@ -290,11 +301,13 @@ function CredentialCard({
   isRevealed,
   onToggleReveal,
   onDelete,
+  onHistoryClick,
 }: {
   credential: CredentialWithPassword;
   isRevealed: boolean;
   onToggleReveal: () => void;
   onDelete: () => void;
+  onHistoryClick: (cred: Credential) => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -362,9 +375,18 @@ function CredentialCard({
       </div>
 
       <div className="flex items-center justify-between pt-3 border-t border-slate-700">
-        <span className="text-xs text-gray-500">
-          {credential.lastAccessed ? `Accessed ${formatDate(credential.lastAccessed)}` : 'Never accessed'}
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-500">
+            {credential.lastAccessed ? `Accessed ${formatDate(credential.lastAccessed)}` : 'Never accessed'}
+          </span>
+          <button
+            onClick={() => onHistoryClick(credential)}
+            className="text-blue-400 hover:text-blue-300 transition-colors text-xs flex items-center gap-1"
+          >
+            <Clock className="h-3 w-3" />
+            History
+          </button>
+        </div>
         <button
           onClick={onDelete}
           className="text-red-400 hover:text-red-300 transition-colors"
@@ -390,9 +412,32 @@ function AddCredentialModal({
     name: '',
     username: '',
     password: '',
-    url: '',
+    url: 'https://',
+    urlProtocol: 'https://' as 'https://' | 'http://',
   });
   const [saving, setSaving] = useState(false);
+
+  const handleUrlChange = (value: string) => {
+    // Extract protocol if user pastes full URL
+    if (value.startsWith('http://')) {
+      setFormData({ ...formData, url: value, urlProtocol: 'http://' });
+    } else if (value.startsWith('https://')) {
+      setFormData({ ...formData, url: value, urlProtocol: 'https://' });
+    } else {
+      // Auto-add protocol
+      setFormData({ ...formData, url: formData.urlProtocol + value.replace(/^(https?:\/\/)/, '') });
+    }
+  };
+
+  const toggleProtocol = () => {
+    const newProtocol = formData.urlProtocol === 'https://' ? 'http://' : 'https://';
+    const urlWithoutProtocol = formData.url.replace(/^https?:\/\//, '');
+    setFormData({ 
+      ...formData, 
+      urlProtocol: newProtocol,
+      url: newProtocol + urlWithoutProtocol
+    });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -506,14 +551,25 @@ function AddCredentialModal({
             <label className="block text-sm font-medium text-gray-300 mb-2">
               Website URL (optional)
             </label>
-            <input
-              type="url"
-              disabled={saving}
-              value={formData.url}
-              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-              className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none disabled:opacity-50"
-              placeholder="https://example.com"
-            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={toggleProtocol}
+                disabled={saving}
+                className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white hover:border-purple-500 focus:border-purple-500 focus:outline-none disabled:opacity-50 font-mono text-sm"
+              >
+                {formData.urlProtocol}
+              </button>
+              <input
+                type="text"
+                disabled={saving}
+                value={formData.url.replace(/^https?:\/\//, '')}
+                onChange={(e) => handleUrlChange(e.target.value)}
+                className="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white focus:border-purple-500 focus:outline-none disabled:opacity-50"
+                placeholder="example.com or github.com/username"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">Click protocol button to switch between https:// and http://</p>
           </div>
 
           <div className="bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mt-4">
@@ -554,6 +610,132 @@ function AddCredentialModal({
             </Button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+function AccessHistoryModal({
+  credentialId,
+  credentialName,
+  walletAddress,
+  onClose,
+}: {
+  credentialId: string;
+  credentialName: string;
+  walletAddress: string;
+  onClose: () => void;
+}) {
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const history = await getCredentialAuditLogs(credentialId, walletAddress);
+        setLogs(history);
+      } catch (error) {
+        console.error('Failed to fetch history:', error);
+        toast.error('Failed to load access history');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [credentialId, walletAddress]);
+
+  const getActionColor = (action: string) => {
+    switch (action) {
+      case 'create': return 'text-green-400';
+      case 'read': return 'text-blue-400';
+      case 'delete': return 'text-red-400';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getActionIcon = (action: string) => {
+    switch (action) {
+      case 'create': return <Plus className="h-4 w-4" />;
+      case 'read': return <Eye className="h-4 w-4" />;
+      case 'delete': return <Trash2 className="h-4 w-4" />;
+      default: return <Activity className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-slate-800 border border-purple-500/20 rounded-lg p-6 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-bold text-white">Access History</h2>
+            <p className="text-sm text-gray-400 mt-1">{credentialName}</p>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            ✕
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {loading && (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500 mx-auto"></div>
+              <p className="text-gray-400 mt-4">Loading history...</p>
+            </div>
+          )}
+
+          {!loading && logs.length === 0 && (
+            <div className="text-center py-8">
+              <Clock className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-400">No access history yet</p>
+            </div>
+          )}
+
+          {!loading && logs.length > 0 && (
+            <div className="space-y-3">
+              {logs.map((log) => (
+                <div
+                  key={log.id}
+                  className="bg-slate-900/50 border border-slate-700 rounded-lg p-4 hover:border-purple-500/30 transition-all"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className={`mt-1 ${getActionColor(log.action)}`}>
+                        {getActionIcon(log.action)}
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className={`font-semibold ${getActionColor(log.action)} capitalize`}>
+                            {log.action}
+                          </span>
+                          {log.txHash && (
+                            <span className="text-xs text-gray-500 font-mono">
+                              tx: {log.txHash.slice(0, 8)}...
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-400 mt-1">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </p>
+                        {log.ipHash && (
+                          <p className="text-xs text-gray-600 mt-1 font-mono">
+                            IP: {log.ipHash.slice(0, 16)}...
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 pt-4 border-t border-slate-700">
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <Shield className="h-4 w-4 text-purple-400" />
+            <span>All access is logged on the blockchain for security and audit purposes</span>
+          </div>
+        </div>
       </div>
     </div>
   );

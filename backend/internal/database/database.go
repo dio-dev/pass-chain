@@ -33,10 +33,17 @@ func New(cfg config.DatabaseConfig) (*Database, error) {
 
 // Migrate runs database migrations
 func (db *Database) Migrate() error {
-	return db.AutoMigrate(
+	// First run basic migrations (backward compatible)
+	err := db.AutoMigrate(
 		&models.Credential{},
 		&models.AuditLog{},
 	)
+	if err != nil {
+		return err
+	}
+
+	// Then run enterprise migrations
+	return db.MigrateEnterprise()
 }
 
 // Close closes the database connection

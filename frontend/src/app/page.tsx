@@ -70,7 +70,7 @@ export default function HomePage() {
             <a href="#features" className="text-gray-300 hover:text-purple-400 transition">Features</a>
             <a href="#how-it-works" className="text-gray-300 hover:text-purple-400 transition">How It Works</a>
             <a href="#security" className="text-gray-300 hover:text-purple-400 transition">Security</a>
-            <a href="/docs" className="text-gray-300 hover:text-purple-400 transition">Docs</a>
+            <a href="https://dionix117.gitbook.io/dio-dev/product-docs/pass-chain-product-documentation" target='_blank' className="text-gray-300 hover:text-purple-400 transition">Docs</a>
             <ConnectButton />
           </div>
         </div>
@@ -92,37 +92,24 @@ export default function HomePage() {
             Not us. Not hackers. Not even the NSA.
           </p>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <ConnectButton.Custom>
-              {({ account, chain, openConnectModal, mounted }) => {
-                const ready = mounted;
-                const connected = ready && account && chain;
-
-                return (
-                  <Button
-                    size="lg"
-                    onClick={() => {
-                      if (connected) {
-                        router.push('/dashboard');
-                      } else {
-                        openConnectModal();
-                      }
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg transform hover:scale-105 transition"
-                  >
-                    {connected ? (
-                      <>Go to Dashboard <ChevronRight className="ml-2" /></>
-                    ) : (
-                      '🚀 Get Started'
-                    )}
-                  </Button>
-                );
-              }}
-            </ConnectButton.Custom>
+            {isConnected ? (
+              <Button
+                size="lg"
+                onClick={() => router.push('/dashboard')}
+                className="bg-purple-600 hover:bg-purple-700 text-white px-8 py-6 text-lg transform hover:scale-105 transition"
+              >
+                Go to Dashboard <ChevronRight className="ml-2" />
+              </Button>
+            ) : (
+              <div className="flex flex-col md:flex-row gap-4">
+                <ConnectButton />
+              </div>
+            )}
             <Button
               size="lg"
               variant="outline"
               onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-              className="border-purple-400 text-purple-400 hover:bg-purple-950 px-8 py-6 text-lg"
+              className="border-white text-white hover:bg-purple-700 hover:border-white border px-8 py-6 text-lg"
             >
               Learn More
             </Button>
@@ -199,7 +186,7 @@ export default function HomePage() {
           <h2 className="text-5xl font-bold text-center mb-16 text-white">Security First</h2>
           <div className="grid md:grid-cols-2 gap-12 max-w-5xl mx-auto">
             <div>
-              <h3 className="text-3xl font-bold mb-6 text-red-400">What We Can't Do</h3>
+              <h3 className="text-3xl font-bold mb-6 text-red-400">What We Can&apos;t Do</h3>
               <ul className="space-y-4 text-lg">
                 {[
                   "Decrypt your passwords",
@@ -266,37 +253,27 @@ export default function HomePage() {
             Join the future of password management. No credit card required.
           </p>
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <ConnectButton.Custom>
-              {({ account, chain, openConnectModal, mounted }) => {
-                const ready = mounted;
-                const connected = ready && account && chain;
-
-                return (
-                  <Button
-                    size="lg"
-                    onClick={() => {
-                      if (connected) {
-                        router.push('/dashboard');
-                      } else {
-                        openConnectModal();
-                      }
-                    }}
-                    className="bg-white text-purple-900 hover:bg-gray-100 px-8 py-6 text-lg font-bold transform hover:scale-105 transition"
-                  >
-                    {connected ? '📊 Go to Dashboard' : '🚀 Launch App'}
-                  </Button>
-                );
-              }}
-            </ConnectButton.Custom>
-            <Button
-              size="lg"
-              variant="outline"
-              onClick={() => window.open('https://github.com/yourusername/pass-chain', '_blank')}
-              className="border-white text-white hover:bg-white/10 px-8 py-6 text-lg"
+            {isConnected ? (
+              <Button
+                size="lg"
+                onClick={() => router.push('/dashboard')}
+                className="bg-white text-purple-900 hover:bg-gray-100 px-8 py-6 text-lg font-bold transform hover:scale-105 transition"
+              >
+                📊 Go to Dashboard
+              </Button>
+            ) : (
+              <ConnectButton />
+            )}
+            <a
+              href="https://github.com/dio-dev/pass-chain"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center border-white bg-purple-600 text-white hover:bg-purple-700 px-8 py-6 text-lg rounded-lg border font-medium transition"
+              style={{ textDecoration: "none" }}
             >
               <Github className="mr-2 h-5 w-5" />
               Star on GitHub
-            </Button>
+            </a>
           </div>
         </div>
       </section>
@@ -305,15 +282,15 @@ export default function HomePage() {
       <footer className="py-12 px-4 bg-slate-900 border-t border-purple-500/20">
         <div className="container mx-auto text-center">
           <div className="flex justify-center space-x-8 mb-6">
-            <a href="/docs" className="text-gray-400 hover:text-purple-400 transition">Documentation</a>
-            <a href="https://github.com/yourusername/pass-chain" className="text-gray-400 hover:text-purple-400 transition flex items-center gap-2">
+            <a href="https://dionix117.gitbook.io/dio-dev/product-docs/pass-chain-product-documentation" target='_blank' className="text-gray-400 hover:text-purple-400 transition">Documentation</a>
+            <a href="https://github.com/dio-dev/pass-chain" target='_blank' className="text-gray-400 hover:text-purple-400 transition flex items-center gap-2">
               <Github className="h-4 w-4" />
               GitHub
             </a>
-            <a href="#" className="text-gray-400 hover:text-purple-400 transition flex items-center gap-2">
+            {/* <a href="#" target='_blank' className="text-gray-400 hover:text-purple-400 transition flex items-center gap-2">
               <Twitter className="h-4 w-4" />
               Twitter
-            </a>
+            </a> */}
           </div>
           <p className="text-gray-400">
             © 2025 Pass Chain. Open Source. MIT License.

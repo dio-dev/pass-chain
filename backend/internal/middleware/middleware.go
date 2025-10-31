@@ -86,3 +86,36 @@ func WalletAuth(secret string) gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+// AuthRequired middleware for wallet-based authentication
+// Extracts wallet address from header and sets it in context
+func AuthRequired() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Get wallet address from header
+		walletAddress := c.GetHeader("X-Wallet-Address")
+		if walletAddress == "" {
+			// Try query parameter (for websocket/alternative auth)
+			walletAddress = c.Query("wallet")
+		}
+
+		if walletAddress == "" {
+			c.JSON(401, gin.H{"error": "Unauthorized: wallet address required"})
+			c.Abort()
+			return
+		}
+
+		// TODO: Verify wallet signature
+		// signature := c.GetHeader("X-Signature")
+		// message := c.GetHeader("X-Message")
+		// if !verifySignature(walletAddress, signature, message) {
+		//     c.JSON(401, gin.H{"error": "Invalid signature"})
+		//     c.Abort()
+		//     return
+		// }
+
+		// Set wallet address in context
+		c.Set("walletAddress", walletAddress)
+		c.Next()
+	}
+}
+

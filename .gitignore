@@ -20,13 +20,30 @@ frontend/.cache/
 frontend/coverage/
 frontend/pnpm-lock.yaml
 
-# Backend
+
+
+# Contracts
+contracts/node_modules/
+contracts/artifacts/
+contracts/cache/
+contracts/typechain/
+contracts/coverage/
+contracts/.openzeppelin/
+contracts/.env
+contracts/.env.local
+contracts/.env.*.local
+
+
+
+# Backend (Go)
 backend/bin/
+backend/server
 backend/tmp/
 backend/vendor/
 backend/coverage.out
 backend/*.test
 backend/*.prof
+backend/go.sum.bak
 
 # Blockchain
 blockchain/channel-artifacts/
@@ -87,6 +104,17 @@ coverage/
 tmp/
 temp/
 *.tmp
+
+# Temporary documentation (keep only official docs)
+*COMPLETE*.md
+*PROGRESS*.md
+*STATUS*.md
+*SUMMARY*.md
+*UPDATE*.md
+*GUIDE*.md
+!README.md
+!IMPLEMENTATION_PLAN.md
+!docs/**/*.md
 
 
 

@@ -1,4 +1,4 @@
-package fabric
+package services
 
 import (
 	"encoding/json"
@@ -52,7 +52,7 @@ func NewFabricClient(cfg *FabricConfig, log *logger.Logger) (*FabricClient, erro
 		sdk:           sdk,
 		channelClient: channelClient,
 		channelID:     cfg.ChannelID,
-		chaincode     cfg.ChaincodeID,
+		chaincode:     cfg.ChaincodeID,
 		logger:        log,
 	}, nil
 }
